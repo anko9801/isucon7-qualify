@@ -22,6 +22,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo-contrib/session"
+	"github.com/labstack/echo/middleware"
 )
 
 const (
@@ -721,4 +722,42 @@ func tRange(a, b int64) []int64 {
 }
 
 func main() {
+	fmt.Printf("WAKARANZOU")
+	log.Printf("WAKARANXOU")
+	e := echo.New()
+	funcs := template.FuncMap{
+		"add":    tAdd,
+		"xrange": tRange,
+	}
+	e.Renderer = &Renderer{
+		templates: template.Must(template.New("").Funcs(funcs).ParseGlob("views/*.html")),
+	}
+	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secretonymoris"))))
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "request:\"${method} ${uri}\" status:${status} latency:${latency} (${latency_human}) bytes:${bytes_out}\n",
+	}))
+	e.Use(middleware.Static("../public"))
+
+	e.GET("/initialize", getInitialize)
+	e.GET("/", getIndex)
+	e.GET("/register", getRegister)
+	e.POST("/register", postRegister)
+	e.GET("/login", getLogin)
+	e.POST("/login", postLogin)
+	e.GET("/logout", getLogout)
+
+	e.GET("/channel/:channel_id", getChannel)
+	e.GET("/message", getMessage)
+	e.POST("/message", postMessage)
+	e.GET("/fetch", fetchUnread)
+	e.GET("/history/:channel_id", getHistory)
+
+	e.GET("/profile/:user_name", getProfile)
+	e.POST("/profile", postProfile)
+
+	e.GET("add_channel", getAddChannel)
+	e.POST("add_channel", postAddChannel)
+	e.GET("/icons/:file_name", getIcon)
+
+	e.Start(":5000")
 }
