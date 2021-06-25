@@ -723,6 +723,7 @@ func tRange(a, b int64) []int64 {
 
 func main() {
 	fmt.Printf("WAKARANZOU")
+	log.Printf("WAKARANXOU")
 	e := echo.New()
 	funcs := template.FuncMap{
 		"add":    tAdd,
