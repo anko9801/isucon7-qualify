@@ -445,6 +445,24 @@ func fetchUnread(c echo.Context) error {
 
 	resp := []map[string]interface{}{}
 
+	// type tmp struct {
+	// 	ChannelID int64 `db:channel_id`
+	// 	cnt       int64 `db:cnt`
+	// }
+	// data := []tmp{}
+	// query, args, err := db.In(`
+	// SELECT
+	// 	M.channel_id, COUNT(M.*) as cnt
+	// FROM message AS M
+	// JOIN (
+	// 	SELECT channel_id, message_id FROM haveread WHERE user_id = ? AND channel_id IN (?)
+	// ) AS H
+	// ON M.channel_id = H.channel_id AND H.message_id < M.id`, channels)
+	// if err != nil {
+	// 	return err
+	// }
+	// err = db.Select(&data, query, userID, args...)
+
 	for _, chID := range channels {
 		lastID, err := queryHaveRead(userID, chID)
 		if err != nil {
@@ -452,15 +470,18 @@ func fetchUnread(c echo.Context) error {
 		}
 
 		var cnt int64
-		if lastID > 0 {
-			err = db.Get(&cnt,
-				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
-				chID, lastID)
-		} else {
-			err = db.Get(&cnt,
-				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?",
-				chID)
-		}
+		err = db.Get(&cnt,
+			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
+			chID, lastID)
+		// if lastID > 0 {
+		// 	err = db.Get(&cnt,
+		// 		"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
+		// 		chID, lastID)
+		// } else {
+		// 	err = db.Get(&cnt,
+		// 		"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?",
+		// 		chID)
+		// }
 		if err != nil {
 			return err
 		}
