@@ -382,26 +382,36 @@ func getMessage(c echo.Context) error {
 		return err
 	}
 
-	messages, err := queryMessages(chanID, lastID)
+	type tmp struct {
+		MessageID   int64     `db:"id"`
+		UserID      int64     `db:"id"`
+		Name        string    `db:"name"`
+		DisplayName string    `db:"display_name"`
+		AvatarIcon  string    `db:"avatar_icon"`
+		CreatedAt   time.Time `db:"created_at"`
+		Content     string    `db:"content"`
+	}
+	data := []tmp{}
+	err = db.Select(&data, "SELECT M.id, U.id, U.name, U.display_name, U.avatar_icon, M.created_at, M.content FROM user AS U JOIN (SELECT id, user_id FROM message WHERE channel_id = ? AND id > ? ORDER BY id DESC LIMIT 100) AS M ON U.id = M.user_id", chanID, lastID)
 	if err != nil {
 		return err
 	}
 
 	response := make([]map[string]interface{}, 0)
-	for i := len(messages) - 1; i >= 0; i-- {
-		m := messages[i]
-		r, err := jsonifyMessage(m)
-		if err != nil {
-			return err
-		}
+	for i := range data {
+		r := make(map[string]interface{})
+		r["id"] = data[i].UserID
+		r["user"] = User{data[i].UserID, data[i].Name, "", "", data[i].DisplayName, data[i].AvatarIcon, time.Time{}}
+		r["date"] = data[i].CreatedAt.Format("2006/01/02 15:04:05")
+		r["content"] = data[i].Content
 		response = append(response, r)
 	}
 
-	if len(messages) > 0 {
+	if len(data) > 0 {
 		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
 			" VALUES (?, ?, ?, NOW(), NOW())"+
 			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
-			userID, chanID, messages[0].ID, messages[0].ID)
+			userID, chanID, data[0].MessageID, data[0].MessageID)
 		if err != nil {
 			return err
 		}
