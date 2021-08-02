@@ -398,13 +398,13 @@ func getMessage(c echo.Context) error {
 	}
 
 	response := make([]map[string]interface{}, 0, len(data))
-	for i := range data {
-		r := make(map[string]interface{})
-		r["id"] = data[i].UserID
-		r["user"] = User{data[i].UserID, data[i].Name, "", "", data[i].DisplayName, data[i].AvatarIcon, time.Time{}}
-		r["date"] = data[i].CreatedAt.Format("2006/01/02 15:04:05")
-		r["content"] = data[i].Content
-		fmt.Println(r)
+	for i := 0; i < len(data); i++ {
+		r := map[string]interface{}{
+			"id":      data[i].UserID,
+			"user":    User{data[i].UserID, data[i].Name, "", "", data[i].DisplayName, data[i].AvatarIcon, time.Time{}},
+			"date":    data[i].CreatedAt.Format("2006/01/02 15:04:05"),
+			"content": data[i].Content,
+		}
 		response = append(response, r)
 	}
 
