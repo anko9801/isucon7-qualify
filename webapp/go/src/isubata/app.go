@@ -392,12 +392,12 @@ func getMessage(c echo.Context) error {
 		Content     string    `db:"content"`
 	}
 	data := []tmp{}
-	err = db.Select(&data, "SELECT M.id AS message_id, U.id AS user_id, U.name, U.display_name, U.avatar_icon, M.created_at, M.content FROM user AS U JOIN (SELECT id, user_id, created_at, content FROM message WHERE channel_id = ? AND id > ? ORDER BY id DESC LIMIT 100) AS M ON U.id = M.user_id", chanID, lastID)
+	err = db.Select(&data, "SELECT M.id AS message_id, U.id AS user_id, U.name, U.display_name, U.avatar_icon, M.created_at, M.content FROM user AS U JOIN (SELECT id, user_id, created_at, content FROM message WHERE channel_id = ? AND id > ? ORDER BY id DESC LIMIT 100) AS M ON M.user_id = U.id", chanID, lastID)
 	if err != nil {
 		return err
 	}
 
-	response := make([]map[string]interface{}, 0)
+	response := make([]map[string]interface{}, 0, len(data))
 	for i := range data {
 		r := make(map[string]interface{})
 		r["id"] = data[i].UserID
