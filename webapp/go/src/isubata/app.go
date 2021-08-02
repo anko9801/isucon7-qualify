@@ -404,6 +404,7 @@ func getMessage(c echo.Context) error {
 		r["user"] = User{data[i].UserID, data[i].Name, "", "", data[i].DisplayName, data[i].AvatarIcon, time.Time{}}
 		r["date"] = data[i].CreatedAt.Format("2006/01/02 15:04:05")
 		r["content"] = data[i].Content
+		fmt.Println(r)
 		response = append(response, r)
 	}
 
