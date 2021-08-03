@@ -405,9 +405,9 @@ func getMessage(c echo.Context) error {
 			"date":    data[i].CreatedAt.Format("2006/01/02 15:04:05"),
 			"content": data[i].Content,
 		}
+		fmt.Println(r["id"])
 		response = append(response, r)
 	}
-	fmt.Println(response)
 
 	if len(data) > 0 {
 		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
