@@ -351,67 +351,32 @@ func postMessage(c echo.Context) error {
 	return c.NoContent(204)
 }
 
-func jsonifyMessage(m Message) (map[string]interface{}, error) {
-	u := User{}
-	err := db.Get(&u, "SELECT name, display_name, avatar_icon FROM user WHERE id = ?",
-		m.UserID)
+func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
+	userIDs := make([]int64, 0, len(m))
+	for i := len(m) - 1; i >= 0; i-- {
+		userIDs = append(userIDs, m[i].UserID)
+	}
+	query, args, err := db.In("SELECT name, display_name, avatar_icon FROM user WHERE id IN (?)", userIDs)
+	if err != nil {
+		return nil, err
+	}
+	users := []User{}
+	err = db.Select(&users, query, args...)
 	if err != nil {
 		return nil, err
 	}
 
-	r := make(map[string]interface{})
-	r["id"] = m.ID
-	r["user"] = u
-	r["date"] = m.CreatedAt.Format("2006/01/02 15:04:05")
-	r["content"] = m.Content
-	return r, nil
+	rs := make([]map[string]interface{}, 0, len(m))
+	for i := 0; i < len(users); i-- {
+		r := make(map[string]interface{})
+		r["id"] = m[i].ID
+		r["user"] = users[len(users)-1-i]
+		r["date"] = m[i].CreatedAt.Format("2006/01/02 15:04:05")
+		r["content"] = m[i].Content
+		rs = append(rs, r)
+	}
+	return rs, nil
 }
-
-/*
-func getMessage(c echo.Context) error {
-	userID := sessUserID(c)
-	if userID == 0 {
-		return c.NoContent(http.StatusForbidden)
-	}
-
-	chanID, err := strconv.ParseInt(c.QueryParam("channel_id"), 10, 64)
-	if err != nil {
-		return err
-	}
-	lastID, err := strconv.ParseInt(c.QueryParam("last_message_id"), 10, 64)
-	if err != nil {
-		return err
-	}
-
-	messages, err := queryMessages(chanID, lastID)
-	if err != nil {
-		return err
-	}
-
-	response := make([]map[string]interface{}, 0)
-	for i := len(messages) - 1; i >= 0; i-- {
-		m := messages[i]
-		r, err := jsonifyMessage(m)
-		if err != nil {
-			return err
-		}
-		fmt.Println(r)
-		response = append(response, r)
-	}
-
-	if len(messages) > 0 {
-		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
-			" VALUES (?, ?, ?, NOW(), NOW())"+
-			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
-			userID, chanID, messages[0].ID, messages[0].ID)
-		if err != nil {
-			return err
-		}
-	}
-
-	return c.JSON(http.StatusOK, response)
-}
-*/
 
 func getMessage(c echo.Context) error {
 	userID := sessUserID(c)
@@ -595,13 +560,9 @@ func getHistory(c echo.Context) error {
 		return err
 	}
 
-	mjson := make([]map[string]interface{}, 0)
-	for i := len(messages) - 1; i >= 0; i-- {
-		r, err := jsonifyMessage(messages[i])
-		if err != nil {
-			return err
-		}
-		mjson = append(mjson, r)
+	mjson, err := jsonifyMessage(messages)
+	if err != nil {
+		return err
 	}
 
 	channels := []ChannelInfo{}
