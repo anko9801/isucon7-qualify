@@ -367,6 +367,7 @@ func jsonifyMessage(m Message) (map[string]interface{}, error) {
 	return r, nil
 }
 
+/*
 func getMessage(c echo.Context) error {
 	userID := sessUserID(c)
 	if userID == 0 {
@@ -410,8 +411,8 @@ func getMessage(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, response)
 }
+*/
 
-/*
 func getMessage(c echo.Context) error {
 	userID := sessUserID(c)
 	if userID == 0 {
@@ -437,7 +438,7 @@ func getMessage(c echo.Context) error {
 		Content     string    `db:"content"`
 	}
 	data := []tmp{}
-	err = db.Select(&data, "SELECT M.id AS message_id, U.id AS user_id, U.name, U.display_name, U.avatar_icon, M.created_at, M.content FROM (SELECT id, user_id, created_at, content FROM message WHERE channel_id = ? AND id > ? ORDER BY id DESC LIMIT 100) AS M JOIN user AS U ON M.user_id = U.id ORDER BY M.id DESC", chanID, lastID)
+	err = db.Select(&data, "SELECT M.id AS message_id, U.id AS user_id, U.name, U.display_name, U.avatar_icon, M.created_at, M.content FROM (SELECT id, user_id, created_at, content FROM message WHERE channel_id = ? AND id > ? ORDER BY id ASC LIMIT 100) AS M JOIN user AS U ON M.user_id = U.id", chanID, lastID)
 	if err != nil {
 		return err
 	}
@@ -467,7 +468,6 @@ func getMessage(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, response)
 }
-*/
 
 func queryChannels() ([]int64, error) {
 	res := []int64{}
