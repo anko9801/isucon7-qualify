@@ -356,7 +356,7 @@ func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 	for i := len(m) - 1; i >= 0; i-- {
 		userIDs = append(userIDs, m[i].UserID)
 	}
-	query, args, err := db.In("SELECT name, display_name, avatar_icon FROM user WHERE id IN (?)", userIDs)
+	query, args, err := sqlx.In("SELECT name, display_name, avatar_icon FROM user WHERE id IN (?)", userIDs)
 	if err != nil {
 		return nil, err
 	}
