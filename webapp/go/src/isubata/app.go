@@ -394,6 +394,7 @@ func getMessage(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		fmt.Println(r)
 		response = append(response, r)
 	}
 
