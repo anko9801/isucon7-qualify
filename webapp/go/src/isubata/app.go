@@ -438,13 +438,13 @@ func getMessage(c echo.Context) error {
 		Content     string    `db:"content"`
 	}
 	data := []tmp{}
-	err = db.Select(&data, "SELECT M.id AS message_id, U.id AS user_id, U.name, U.display_name, U.avatar_icon, M.created_at, M.content FROM (SELECT id, user_id, created_at, content FROM message WHERE channel_id = ? AND id > ? ORDER BY id ASC LIMIT 100) AS M JOIN user AS U ON M.user_id = U.id", chanID, lastID)
+	err = db.Select(&data, "SELECT M.id AS message_id, U.id AS user_id, U.name, U.display_name, U.avatar_icon, M.created_at, M.content FROM (SELECT id, user_id, created_at, content FROM message WHERE channel_id = ? AND id > ? ORDER BY id DESC LIMIT 100) AS M JOIN user AS U ON M.user_id = U.id", chanID, lastID)
 	if err != nil {
 		return err
 	}
 
 	response := make([]map[string]interface{}, 0, len(data))
-	for i := 0; i < len(data); i++ {
+	for i := len(data) - 1; i >= 0; i-- {
 		r := map[string]interface{}{
 			"id":      data[i].UserID,
 			"user":    User{data[i].UserID, data[i].Name, "", "", data[i].DisplayName, data[i].AvatarIcon, time.Time{}},
@@ -460,7 +460,7 @@ func getMessage(c echo.Context) error {
 		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
 			" VALUES (?, ?, ?, NOW(), NOW())"+
 			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
-			userID, chanID, data[len(data)-1].MessageID, data[len(data)-1].MessageID)
+			userID, chanID, data[0].MessageID, data[0].MessageID)
 		if err != nil {
 			return err
 		}
