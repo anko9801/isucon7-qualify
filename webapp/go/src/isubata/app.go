@@ -358,13 +358,17 @@ func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 	}
 	query, args, err := sqlx.In("SELECT name, display_name, avatar_icon FROM user WHERE id IN (?)", userIDs)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 	users := []User{}
 	err = db.Select(&users, query, args...)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
+	fmt.Println(len(m))
+	fmt.Println(len(users))
 
 	rs := make([]map[string]interface{}, 0, len(m))
 	for i := 0; i < len(m); i-- {
