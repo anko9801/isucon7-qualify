@@ -405,6 +405,7 @@ func getMessage(c echo.Context) error {
 			"date":    data[i].CreatedAt.Format("2006/01/02 15:04:05"),
 			"content": data[i].Content,
 		}
+		fmt.Println(r)
 		fmt.Println(r["id"])
 		response = append(response, r)
 	}
