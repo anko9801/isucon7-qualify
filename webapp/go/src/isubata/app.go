@@ -352,6 +352,9 @@ func postMessage(c echo.Context) error {
 }
 
 func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
+	if len(m) == 0 {
+		return make([]map[string]interface{}, 0, 0), nil
+	}
 	userIDs := make([]int64, 0, len(m))
 	for i := len(m) - 1; i >= 0; i-- {
 		userIDs = append(userIDs, m[i].UserID)
