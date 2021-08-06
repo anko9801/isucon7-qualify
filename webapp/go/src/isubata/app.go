@@ -370,12 +370,9 @@ func jsonifyMessage(m map[int64]Message) ([]map[string]interface{}, error) {
 		fmt.Println(err)
 		return nil, err
 	}
-	fmt.Println(len(m))
-	fmt.Println(len(users))
 
 	rs := make([]map[string]interface{}, 0, len(users))
-	for i := 0; i < len(users); i++ {
-		fmt.Println(users[i])
+	for i := len(users) - 1; i >= 0; i-- {
 		r := make(map[string]interface{})
 		r["id"] = users[i].ID
 		r["user"] = users[i]
