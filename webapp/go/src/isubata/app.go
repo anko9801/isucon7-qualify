@@ -374,18 +374,14 @@ func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 	fmt.Println(len(users))
 
 	rs := make([]map[string]interface{}, 0, len(users))
-	for i := 0; i < len(users); i-- {
+	for i := 0; i < len(users); i++ {
 		fmt.Println(users[i])
 		r := make(map[string]interface{})
 		r["id"] = users[i].ID
 		r["user"] = users[i]
-		fmt.Println("index")
 		r["date"] = m[i].CreatedAt.Format("2006/01/02 15:04:05")
-		fmt.Println("out")
 		r["content"] = m[i].Content
-		fmt.Println("range")
 		rs = append(rs, r)
-		fmt.Println("test")
 	}
 	return rs, nil
 }
