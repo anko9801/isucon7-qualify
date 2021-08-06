@@ -228,6 +228,7 @@ func getInitialize(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		fmt.Println(images[i].name)
 	}
 	return c.String(204, "")
 }
