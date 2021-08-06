@@ -351,15 +351,15 @@ func postMessage(c echo.Context) error {
 	return c.NoContent(204)
 }
 
-func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
+func jsonifyMessage(m map[int64]Message) ([]map[string]interface{}, error) {
 	if len(m) == 0 {
 		return make([]map[string]interface{}, 0, 0), nil
 	}
 	userIDs := make([]int64, 0, len(m))
-	for i := len(m) - 1; i >= 0; i-- {
-		userIDs = append(userIDs, m[i].UserID)
+	for i := range m {
+		userIDs = append(userIDs, i)
 	}
-	query, args, err := sqlx.In("SELECT id, name, display_name, avatar_icon FROM user WHERE id IN (?)", userIDs)
+	query, args, err := sqlx.In("SELECT id, name, display_name, avatar_icon FROM user WHERE id IN (?) ORDER BY id DESC", userIDs)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -379,8 +379,8 @@ func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 		r := make(map[string]interface{})
 		r["id"] = users[i].ID
 		r["user"] = users[i]
-		r["date"] = m[i].CreatedAt.Format("2006/01/02 15:04:05")
-		r["content"] = m[i].Content
+		r["date"] = m[users[i].ID].CreatedAt.Format("2006/01/02 15:04:05")
+		r["content"] = m[users[i].ID].Content
 		rs = append(rs, r)
 	}
 	return rs, nil
@@ -568,7 +568,11 @@ func getHistory(c echo.Context) error {
 		return err
 	}
 
-	mjson, err := jsonifyMessage(messages)
+	mappedMessages := map[int64]Message{}
+	for i := range messages {
+		mappedMessages[messages[i].UserID] = messages[i]
+	}
+	mjson, err := jsonifyMessage(mappedMessages)
 	if err != nil {
 		return err
 	}
