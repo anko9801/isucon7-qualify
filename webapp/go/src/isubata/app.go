@@ -351,12 +351,18 @@ func postMessage(c echo.Context) error {
 	return c.NoContent(204)
 }
 
-func jsonifyMessage(m map[int64]Message) ([]map[string]interface{}, error) {
+func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 	if len(m) == 0 {
 		return make([]map[string]interface{}, 0, 0), nil
 	}
-	userIDs := make([]int64, 0, len(m))
+
+	messages := map[int64]Message{}
 	for i := range m {
+		messages[m[i].UserID] = m[i]
+	}
+
+	userIDs := make([]int64, 0, len(m))
+	for i := range messages {
 		userIDs = append(userIDs, i)
 	}
 	query, args, err := sqlx.In("SELECT id, name, display_name, avatar_icon FROM user WHERE id IN (?) ORDER BY id DESC", userIDs)
@@ -376,8 +382,8 @@ func jsonifyMessage(m map[int64]Message) ([]map[string]interface{}, error) {
 		r := make(map[string]interface{})
 		r["id"] = users[i].ID
 		r["user"] = users[i]
-		r["date"] = m[users[i].ID].CreatedAt.Format("2006/01/02 15:04:05")
-		r["content"] = m[users[i].ID].Content
+		r["date"] = messages[users[i].ID].CreatedAt.Format("2006/01/02 15:04:05")
+		r["content"] = messages[users[i].ID].Content
 		rs = append(rs, r)
 	}
 	return rs, nil
@@ -398,37 +404,44 @@ func getMessage(c echo.Context) error {
 		return err
 	}
 
-	type tmp struct {
-		MessageID   int64     `db:"message_id"`
-		UserID      int64     `db:"user_id"`
-		Name        string    `db:"name"`
-		DisplayName string    `db:"display_name"`
-		AvatarIcon  string    `db:"avatar_icon"`
-		CreatedAt   time.Time `db:"created_at"`
-		Content     string    `db:"content"`
-	}
-	data := []tmp{}
-	err = db.Select(&data, "SELECT M.id AS message_id, U.id AS user_id, U.name, U.display_name, U.avatar_icon, M.created_at, M.content FROM (SELECT id, user_id, created_at, content FROM message WHERE channel_id = ? AND id > ? ORDER BY id DESC LIMIT 100) AS M JOIN user AS U ON M.user_id = U.id", chanID, lastID)
+	// type tmp struct {
+	// 	MessageID   int64     `db:"message_id"`
+	// 	UserID      int64     `db:"user_id"`
+	// 	Name        string    `db:"name"`
+	// 	DisplayName string    `db:"display_name"`
+	// 	AvatarIcon  string    `db:"avatar_icon"`
+	// 	CreatedAt   time.Time `db:"created_at"`
+	// 	Content     string    `db:"content"`
+	// }
+	// data := []tmp{}
+	// err = db.Select(&data, "SELECT M.id AS message_id, U.id AS user_id, U.name, U.display_name, U.avatar_icon, M.created_at, M.content FROM (SELECT id, user_id, created_at, content FROM message WHERE channel_id = ? AND id > ? ORDER BY id DESC LIMIT 100) AS M JOIN user AS U ON M.user_id = U.id", chanID, lastID)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// response := make([]map[string]interface{}, 0, len(data))
+	// for i := len(data) - 1; i >= 0; i-- {
+	// 	r := map[string]interface{}{
+	// 		"id":      data[i].UserID,
+	// 		"user":    User{data[i].UserID, data[i].Name, "", "", data[i].DisplayName, data[i].AvatarIcon, time.Time{}},
+	// 		"date":    data[i].CreatedAt.Format("2006/01/02 15:04:05"),
+	// 		"content": data[i].Content,
+	// 	}
+	// 	response = append(response, r)
+	// }
+	messages, err := queryMessages(chanID, lastID)
 	if err != nil {
 		return err
 	}
 
-	response := make([]map[string]interface{}, 0, len(data))
-	for i := len(data) - 1; i >= 0; i-- {
-		r := map[string]interface{}{
-			"id":      data[i].UserID,
-			"user":    User{data[i].UserID, data[i].Name, "", "", data[i].DisplayName, data[i].AvatarIcon, time.Time{}},
-			"date":    data[i].CreatedAt.Format("2006/01/02 15:04:05"),
-			"content": data[i].Content,
-		}
-		response = append(response, r)
-	}
+	//response := make([]map[string]interface{}, 0)
+	response, err := jsonifyMessage(messages)
 
-	if len(data) > 0 {
+	if len(messages) > 0 {
 		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
 			" VALUES (?, ?, ?, NOW(), NOW())"+
 			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
-			userID, chanID, data[0].MessageID, data[0].MessageID)
+			userID, chanID, messages[0].ID, messages[0].ID)
 		if err != nil {
 			return err
 		}
@@ -565,11 +578,7 @@ func getHistory(c echo.Context) error {
 		return err
 	}
 
-	mappedMessages := map[int64]Message{}
-	for i := range messages {
-		mappedMessages[messages[i].UserID] = messages[i]
-	}
-	mjson, err := jsonifyMessage(mappedMessages)
+	mjson, err := jsonifyMessage(messages)
 	if err != nil {
 		return err
 	}
