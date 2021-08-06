@@ -220,17 +220,17 @@ func getInitialize(c echo.Context) error {
 		return ErrBadReqeust
 	}
 	for i := 0; i < len(images); i++ {
-		fmt.Println(images[i].name)
-		file, err := os.Create(images[i].name)
+		fmt.Println(images[i].Name)
+		file, err := os.Create(images[i].Name)
 		if err != nil {
 			return err
 		}
 		defer file.Close()
-		_, err = file.Write(images[i].data)
+		_, err = file.Write(images[i].Data)
 		if err != nil {
 			return err
 		}
-		fmt.Println(images[i].name)
+		fmt.Println(images[i].Name)
 	}
 	return c.String(204, "")
 }
