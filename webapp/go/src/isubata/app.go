@@ -725,10 +725,9 @@ func postProfile(c echo.Context) error {
 }
 
 func getIcon(c echo.Context) error {
-	var name string
+	name := c.Param("file_name")
 	var data []byte
-	err := db.QueryRow("SELECT name, data FROM image WHERE name = ?",
-		c.Param("file_name")).Scan(&name, &data)
+	err := db.QueryRow("SELECT data FROM image WHERE name = ?", name).Scan(&data)
 	if err == sql.ErrNoRows {
 		return echo.ErrNotFound
 	}
