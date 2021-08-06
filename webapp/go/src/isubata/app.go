@@ -216,7 +216,8 @@ func getInitialize(c echo.Context) error {
 	var images []Image
 	err := db.Select(images, "SELECT name, data FROM image")
 	if err != nil {
-		return err
+		fmt.Println(err)
+		return ErrBadReqeust
 	}
 	for i := 0; i < len(images); i++ {
 		fmt.Println(images[i].name)
