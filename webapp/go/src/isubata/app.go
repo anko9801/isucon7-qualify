@@ -770,7 +770,7 @@ func getIcon(c echo.Context) error {
 
 	f, err := os.Open(name)
 	if err != nil {
-		return err
+		return echo.ErrNotFound
 	}
 	defer f.Close()
 	data, err = ioutil.ReadAll(f)
