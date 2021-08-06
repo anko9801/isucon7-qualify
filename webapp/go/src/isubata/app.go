@@ -202,12 +202,33 @@ func register(name, password string) (int64, error) {
 
 // request handlers
 
+type Image struct {
+	name string `db:name`
+	data []byte `db:data`
+}
+
 func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM user WHERE id > 1000")
 	db.MustExec("DELETE FROM image WHERE id > 1001")
 	db.MustExec("DELETE FROM channel WHERE id > 10")
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
+	var images []Image
+	err := db.Select(images, "SELECT name, data FROM image")
+	if err != nil {
+		return err
+	}
+	for i := 0; i < len(images); i++ {
+		file, err := os.Create(images[i].name)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		_, err = file.Write(images[i].data)
+		if err != nil {
+			return err
+		}
+	}
 	return c.String(204, "")
 }
 
@@ -713,10 +734,20 @@ func postProfile(c echo.Context) error {
 	}
 
 	if avatarName != "" && len(avatarData) > 0 {
-		_, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
+		file, err := os.Create(avatarName)
 		if err != nil {
 			return err
 		}
+		defer file.Close()
+		_, err = file.Write(avatarData)
+		if err != nil {
+			return err
+		}
+
+		// _, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
+		// if err != nil {
+		// 	return err
+		// }
 		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
 		if err != nil {
 			return err
@@ -736,13 +767,24 @@ func postProfile(c echo.Context) error {
 func getIcon(c echo.Context) error {
 	name := c.Param("file_name")
 	var data []byte
-	err := db.QueryRow("SELECT data FROM image WHERE name = ?", name).Scan(&data)
-	if err == sql.ErrNoRows {
-		return echo.ErrNotFound
-	}
+
+	f, err := os.Open(name)
 	if err != nil {
 		return err
 	}
+	defer f.Close()
+	data, err = ioutil.ReadAll(f)
+	if err != nil {
+		return err
+	}
+
+	// err := db.QueryRow("SELECT data FROM image WHERE name = ?", name).Scan(&data)
+	// if err == sql.ErrNoRows {
+	// 	return echo.ErrNotFound
+	// }
+	// if err != nil {
+	// 	return err
+	// }
 
 	mime := ""
 	switch true {
