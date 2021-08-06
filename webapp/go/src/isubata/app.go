@@ -219,6 +219,7 @@ func getInitialize(c echo.Context) error {
 		return err
 	}
 	for i := 0; i < len(images); i++ {
+		fmt.Println(images[i].name)
 		file, err := os.Create(images[i].name)
 		if err != nil {
 			return err
