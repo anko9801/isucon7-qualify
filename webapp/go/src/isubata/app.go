@@ -203,8 +203,8 @@ func register(name, password string) (int64, error) {
 // request handlers
 
 type Image struct {
-	Name string `db:name`
-	Data []byte `db:data`
+	Name string `db:"name"`
+	Data []byte `db:"data"`
 }
 
 func getInitialize(c echo.Context) error {
