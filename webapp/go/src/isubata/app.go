@@ -220,7 +220,6 @@ func getInitialize(c echo.Context) error {
 		return ErrBadReqeust
 	}
 	for i := 0; i < len(images); i++ {
-		fmt.Println(images[i].Name)
 		file, err := os.Create(images[i].Name)
 		if err != nil {
 			return err
@@ -230,7 +229,6 @@ func getInitialize(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(images[i].Name)
 	}
 	return c.String(204, "")
 }
@@ -409,6 +407,7 @@ func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 		r["date"] = messages[users[i].ID].CreatedAt.Format("2006/01/02 15:04:05")
 		r["content"] = messages[users[i].ID].Content
 		rs = append(rs, r)
+		fmt.Println(users[i].ID)
 	}
 	return rs, nil
 }
@@ -460,6 +459,9 @@ func getMessage(c echo.Context) error {
 
 	//response := make([]map[string]interface{}, 0)
 	response, err := jsonifyMessage(messages)
+	if err != nil {
+		return err
+	}
 
 	if len(messages) > 0 {
 		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
