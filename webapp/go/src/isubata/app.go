@@ -384,8 +384,8 @@ func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 	}
 
 	userIDs := make([]int64, 0, len(m))
-	for i := range messages {
-		userIDs = append(userIDs, i)
+	for id := range messages {
+		userIDs = append(userIDs, id)
 	}
 	query, args, err := sqlx.In("SELECT id, name, display_name, avatar_icon FROM user WHERE id IN (?) ORDER BY id DESC", userIDs)
 	if err != nil {
@@ -407,7 +407,7 @@ func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 		r["date"] = messages[users[i].ID].CreatedAt.Format("2006/01/02 15:04:05")
 		r["content"] = messages[users[i].ID].Content
 		rs = append(rs, r)
-		fmt.Println(users[i].ID)
+		fmt.Println(users[i])
 	}
 	return rs, nil
 }
