@@ -107,7 +107,7 @@ read_rnd_buffer_size = 2MB #
 key_buffer_size = 256MB
 # 1に設定するとトランザクション単位でログを出力するが 2 を指定すると1秒間に1回ログを吐く。0だとログも1秒に1回。TODO違いをみる
 innodb_flush_log_at_trx_commit = 0
-innodb_flush_log_at_trx_commit = 2
+# innodb_flush_log_at_trx_commit = 2
 # データファイル、ログファイルの読み書き方式を指定する(実験する価値はある)
 innodb_flush_method = O_DIRECT
 # * Security Features
