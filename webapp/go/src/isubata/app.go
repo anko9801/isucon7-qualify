@@ -511,8 +511,7 @@ func queryHaveRead(userID int64, chID []int64) ([]binID, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(query)
-	err = db.Select(&IDs, query, args...)
+	err = db.Select(&IDs, query, userID, args...)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
