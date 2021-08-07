@@ -412,8 +412,17 @@ func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 		r["date"] = m[i].CreatedAt.Format("2006/01/02 15:04:05")
 		r["content"] = m[i].Content
 		rs = append(rs, r)
-		fmt.Println(m[i])
+		fmt.Println(r)
 	}
+	// for i := len(users) - 1; i >= 0; i-- {
+	// 	r := make(map[string]interface{})
+	// 	r["id"] = users[i].ID
+	// 	r["user"] = users[i]
+	// 	r["date"] = messages[users[i].ID].CreatedAt.Format("2006/01/02 15:04:05")
+	// 	r["content"] = messages[users[i].ID].Content
+	// 	rs = append(rs, r)
+	// 	fmt.Println(users[i])
+	// }
 	fmt.Println(len(m))
 	fmt.Println(len(users))
 	fmt.Println(len(rs))
