@@ -505,20 +505,20 @@ type binID struct {
 }
 
 func queryHaveRead(userID int64, chID []int64) ([]binID, error) {
-	var MessageID []binID
+	IDs := []binID{}
 
 	query, args, err := sqlx.In("SELECT message_id, channel_id FROM haveread WHERE user_id = ? AND channel_id IN (?)", chID)
 	if err != nil {
 		return nil, err
 	}
-	err = db.Select(&MessageID, query, args...)
+	err = db.Select(&IDs, query, args...)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
-	return MessageID, nil
+	return IDs, nil
 }
 
 func fetchUnread(c echo.Context) error {
