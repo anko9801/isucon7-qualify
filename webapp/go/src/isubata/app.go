@@ -407,7 +407,7 @@ func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 	rs := make([]map[string]interface{}, 0, len(users))
 	for i := len(m) - 1; i >= 0; i-- {
 		r := make(map[string]interface{})
-		r["id"] = m[i].UserID
+		r["id"] = m[i].ID
 		r["user"] = usersMap[m[i].UserID]
 		r["date"] = m[i].CreatedAt.Format("2006/01/02 15:04:05")
 		r["content"] = m[i].Content
