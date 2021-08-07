@@ -499,16 +499,24 @@ func queryChannels() ([]int64, error) {
 	return res, err
 }
 
-func queryHaveRead(userID, chID int64) (int64, error) {
-	var MessageID int64
+type binID struct {
+	Message int64 `db:"message_id"`
+	Channel int64 `db:"channel_id"`
+}
 
-	err := db.Get(&MessageID, "SELECT message_id FROM haveread WHERE user_id = ? AND channel_id = ?",
-		userID, chID)
+func queryHaveRead(userID int64, chID []int64) ([]binID, error) {
+	var MessageID []binID
+
+	query, args, err := sqlx.In("SELECT message_id, channel_id FROM haveread WHERE user_id = ? AND channel_id IN (?)", chID)
+	if err != nil {
+		return nil, err
+	}
+	err = db.Select(&MessageID, query, args...)
 
 	if err == sql.ErrNoRows {
-		return 0, nil
+		return nil, nil
 	} else if err != nil {
-		return 0, err
+		return nil, err
 	}
 	return MessageID, nil
 }
@@ -545,17 +553,16 @@ func fetchUnread(c echo.Context) error {
 	// 	return err
 	// }
 	// err = db.Select(&data, query, userID, args...)
+	IDs, err := queryHaveRead(userID, channels)
+	if err != nil {
+		return err
+	}
 
-	for _, chID := range channels {
-		lastID, err := queryHaveRead(userID, chID)
-		if err != nil {
-			return err
-		}
-
+	for i := range IDs {
 		var cnt int64
 		err = db.Get(&cnt,
 			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
-			chID, lastID)
+			IDs[i].Channel, IDs[i].Message)
 		// if lastID > 0 {
 		// 	err = db.Get(&cnt,
 		// 		"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
@@ -569,7 +576,7 @@ func fetchUnread(c echo.Context) error {
 			return err
 		}
 		r := map[string]interface{}{
-			"channel_id": chID,
+			"channel_id": IDs[i].Channel,
 			"unread":     cnt}
 		resp = append(resp, r)
 	}
