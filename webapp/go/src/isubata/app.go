@@ -410,6 +410,7 @@ func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 		fmt.Println(users[i])
 	}
 	fmt.Println(len(m))
+	fmt.Println(len(users))
 	fmt.Println(len(rs))
 	return rs, nil
 }
