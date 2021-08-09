@@ -142,7 +142,7 @@ func sessSetUserID(c echo.Context, id int64) {
 	sess, _ := session.Get("session", c)
 	sess.Options = &sessions.Options{
 		HttpOnly: true,
-		MaxAge:   360000,
+		MaxAge:   0,
 	}
 	sess.Values["user_id"] = id
 	sess.Save(c.Request(), c.Response())
