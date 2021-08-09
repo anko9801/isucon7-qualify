@@ -412,20 +412,7 @@ func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 		r["date"] = m[i].CreatedAt.Format("2006/01/02 15:04:05")
 		r["content"] = m[i].Content
 		rs = append(rs, r)
-		fmt.Println(r)
 	}
-	// for i := len(users) - 1; i >= 0; i-- {
-	// 	r := make(map[string]interface{})
-	// 	r["id"] = users[i].ID
-	// 	r["user"] = users[i]
-	// 	r["date"] = messages[users[i].ID].CreatedAt.Format("2006/01/02 15:04:05")
-	// 	r["content"] = messages[users[i].ID].Content
-	// 	rs = append(rs, r)
-	// 	fmt.Println(users[i])
-	// }
-	fmt.Println(len(m))
-	fmt.Println(len(users))
-	fmt.Println(len(rs))
 	return rs, nil
 }
 
@@ -444,37 +431,11 @@ func getMessage(c echo.Context) error {
 		return err
 	}
 
-	// type tmp struct {
-	// 	MessageID   int64     `db:"message_id"`
-	// 	UserID      int64     `db:"user_id"`
-	// 	Name        string    `db:"name"`
-	// 	DisplayName string    `db:"display_name"`
-	// 	AvatarIcon  string    `db:"avatar_icon"`
-	// 	CreatedAt   time.Time `db:"created_at"`
-	// 	Content     string    `db:"content"`
-	// }
-	// data := []tmp{}
-	// err = db.Select(&data, "SELECT M.id AS message_id, U.id AS user_id, U.name, U.display_name, U.avatar_icon, M.created_at, M.content FROM (SELECT id, user_id, created_at, content FROM message WHERE channel_id = ? AND id > ? ORDER BY id DESC LIMIT 100) AS M JOIN user AS U ON M.user_id = U.id", chanID, lastID)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// response := make([]map[string]interface{}, 0, len(data))
-	// for i := len(data) - 1; i >= 0; i-- {
-	// 	r := map[string]interface{}{
-	// 		"id":      data[i].UserID,
-	// 		"user":    User{data[i].UserID, data[i].Name, "", "", data[i].DisplayName, data[i].AvatarIcon, time.Time{}},
-	// 		"date":    data[i].CreatedAt.Format("2006/01/02 15:04:05"),
-	// 		"content": data[i].Content,
-	// 	}
-	// 	response = append(response, r)
-	// }
 	messages, err := queryMessages(chanID, lastID)
 	if err != nil {
 		return err
 	}
 
-	//response := make([]map[string]interface{}, 0)
 	response, err := jsonifyMessage(messages)
 	if err != nil {
 		return err
@@ -535,24 +496,6 @@ func fetchUnread(c echo.Context) error {
 	}
 
 	resp := []map[string]interface{}{}
-
-	// type tmp struct {
-	// 	ChannelID int64 `db:channel_id`
-	// 	cnt       int64 `db:cnt`
-	// }
-	// data := []tmp{}
-	// query, args, err := db.In(`
-	// SELECT
-	// 	M.channel_id, COUNT(M.*) as cnt
-	// FROM message AS M
-	// JOIN (
-	// 	SELECT channel_id, message_id FROM haveread WHERE user_id = ? AND channel_id IN (?)
-	// ) AS H
-	// ON M.channel_id = H.channel_id AND H.message_id < M.id`, channels)
-	// if err != nil {
-	// 	return err
-	// }
-	// err = db.Select(&data, query, userID, args...)
 	IDs, err := queryHaveRead(userID, channels)
 	if err != nil {
 		return err
