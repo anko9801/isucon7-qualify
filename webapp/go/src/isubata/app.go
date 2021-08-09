@@ -78,8 +78,11 @@ func init() {
 		time.Sleep(time.Second * 3)
 	}
 
+	db.SetMaxIdleConns(1024) // デフォルトだと2
+	db.SetConnMaxLifetime(0) // 一応セット
+	db.SetConnMaxIdleTime(0)
 	db.SetMaxOpenConns(20)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	// db.SetConnMaxLifetime(5 * time.Minute)
 	log.Printf("Succeeded to connect db.")
 }
 
@@ -348,17 +351,23 @@ func getLogout(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, "/")
 }
 
+// 何が遅いんねん ??????
 func postMessage(c echo.Context) error {
+	// Userゲットしてるだけ
+	// gorilla/sessionsが悪っぽい
+	// じゃなんで他のタイムアウトしないん？
 	user, err := ensureLogin(c)
 	if user == nil {
 		return err
 	}
 
+	// これは一瞬
 	message := c.FormValue("message")
 	if message == "" {
 		return echo.ErrForbidden
 	}
 
+	// 一瞬
 	var chanID int64
 	if x, err := strconv.Atoi(c.FormValue("channel_id")); err != nil {
 		return echo.ErrForbidden
@@ -366,6 +375,7 @@ func postMessage(c echo.Context) error {
 		chanID = int64(x)
 	}
 
+	// INSERTしてるだけやがINDEXのB+Tree生成に時間にかかっている訳ではない
 	if _, err := addMessage(chanID, user.ID, message); err != nil {
 		return err
 	}
