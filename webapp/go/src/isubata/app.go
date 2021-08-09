@@ -507,11 +507,11 @@ type binID struct {
 func queryHaveRead(userID int64, chID []int64) ([]binID, error) {
 	IDs := []binID{}
 
-	query, args, err := sqlx.In("SELECT message_id, channel_id FROM haveread WHERE user_id = ? AND channel_id IN (?)", chID)
+	query, args, err := sqlx.In("SELECT message_id, channel_id FROM haveread WHERE user_id = ? AND channel_id IN (?)", userID, chID)
 	if err != nil {
 		return nil, err
 	}
-	err = db.Select(&IDs, query, userID, args...)
+	err = db.Select(&IDs, query, args...)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
