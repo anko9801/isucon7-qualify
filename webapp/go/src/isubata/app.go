@@ -325,7 +325,7 @@ func postLogin(c echo.Context) error {
 	}
 
 	var user User
-	err := db.Get(&user, "SELECT * FROM user WHERE name = ?", name)
+	err := db.Get(&user, "SELECT id, salt, password FROM user WHERE name = ?", name)
 	fmt.Printf("SELECT * FROM user WHERE name = %s", name)
 	if err == sql.ErrNoRows {
 		return echo.ErrForbidden
