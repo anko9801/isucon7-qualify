@@ -465,9 +465,11 @@ func getMessage(c echo.Context) error {
 }
 
 func queryChannels() ([]int64, error) {
-	res := []int64{}
-	err := db.Select(&res, "SELECT id FROM channel")
-	return res, err
+	res := make([]int64, 0, len(channelList))
+	for i := len(channelList) - 1; i >= 0; i++ {
+		res = append(res, channelList[i].ID)
+	}
+	return res, nil
 }
 
 type binID struct {
@@ -498,7 +500,7 @@ func fetchUnread(c echo.Context) error {
 		return c.NoContent(http.StatusForbidden)
 	}
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	channels, err := queryChannels()
 	if err != nil {
