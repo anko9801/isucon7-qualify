@@ -173,7 +173,7 @@ func ensureLogin(c echo.Context) (*User, error) {
 	return user, nil
 
 redirect:
-	c.Redirect(http.StatusSeeOther, "/login")
+	// c.Redirect(http.StatusSeeOther, "/login")
 	return nil, nil
 }
 
@@ -352,6 +352,7 @@ func getLogout(c echo.Context) error {
 }
 
 // 何が遅いんねん ??????
+// なんもわからん
 func postMessage(c echo.Context) error {
 	// Userゲットしてるだけ
 	// gorilla/sessionsが悪っぽい
@@ -759,14 +760,6 @@ func getIcon(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-
-	// err := db.QueryRow("SELECT data FROM image WHERE name = ?", name).Scan(&data)
-	// if err == sql.ErrNoRows {
-	// 	return echo.ErrNotFound
-	// }
-	// if err != nil {
-	// 	return err
-	// }
 
 	mime := ""
 	switch true {
