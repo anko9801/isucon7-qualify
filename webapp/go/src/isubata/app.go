@@ -143,7 +143,7 @@ func sessUserID(c echo.Context) int64 {
 }
 
 func sessSetUserID(c echo.Context, id int64) {
-	sess, _ := sessio64n.Get("session", c)
+	sess, _ := session.Get("session", c)
 	sess.Options = &sessions.Options{
 		HttpOnly: true,
 		MaxAge:   0,
