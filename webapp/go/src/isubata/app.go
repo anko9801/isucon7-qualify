@@ -122,7 +122,6 @@ type Message struct {
 	ChannelID int64     `db:"channel_id"`
 	UserID    int64     `db:"user_id"`
 	Content   string    `db:"content"`
-	Count     int       `db:"count"`
 	CreatedAt time.Time `db:"created_at"`
 }
 
