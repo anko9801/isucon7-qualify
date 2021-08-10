@@ -173,7 +173,7 @@ func ensureLogin(c echo.Context) (*User, error) {
 	return user, nil
 
 redirect:
-	// c.Redirect(http.StatusSeeOther, "/login")
+	c.Redirect(http.StatusSeeOther, "/login")
 	return nil, nil
 }
 
