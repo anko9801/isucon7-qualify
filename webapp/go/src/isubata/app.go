@@ -122,6 +122,7 @@ type Message struct {
 	ChannelID int64     `db:"channel_id"`
 	UserID    int64     `db:"user_id"`
 	Content   string    `db:"content"`
+	Count     int       `db:"count"`
 	CreatedAt time.Time `db:"created_at"`
 }
 
@@ -142,7 +143,7 @@ func sessUserID(c echo.Context) int64 {
 }
 
 func sessSetUserID(c echo.Context, id int64) {
-	sess, _ := session.Get("session", c)
+	sess, _ := sessio64n.Get("session", c)
 	sess.Options = &sessions.Options{
 		HttpOnly: true,
 		MaxAge:   0,
@@ -510,14 +511,17 @@ func fetchUnread(c echo.Context) error {
 
 	channels, err := queryChannels()
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
 	resp := []map[string]interface{}{}
 	IDs, err := queryHaveRead(userID, channels)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
+	return c.JSON(http.StatusOK, resp)
 
 	for i := range IDs {
 		var cnt int64
@@ -534,6 +538,7 @@ func fetchUnread(c echo.Context) error {
 		// 		chID)
 		// }
 		if err != nil {
+			fmt.Println(err)
 			return err
 		}
 		r := map[string]interface{}{
