@@ -466,7 +466,7 @@ func getMessage(c echo.Context) error {
 
 func queryChannels() ([]int64, error) {
 	res := make([]int64, 0, len(channelList))
-	for i := len(channelList) - 1; i >= 0; i++ {
+	for i := len(channelList) - 1; i >= 0; i-- {
 		res = append(res, channelList[i].ID)
 	}
 	return res, nil
