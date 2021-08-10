@@ -128,7 +128,7 @@ type Message struct {
 
 func queryMessages(chanID, lastID int64) ([]Message, error) {
 	msgs := []Message{}
-	err := db.Select(&msgs, "SELECT id FROM message WHERE channel_id = ? AND id > ? ORDER BY id DESC LIMIT 100",
+	err := db.Select(&msgs, "SELECT id, channel_id, user_id, content, created_at FROM message WHERE channel_id = ? AND id > ? ORDER BY id DESC LIMIT 100",
 		chanID, lastID)
 	return msgs, err
 }
