@@ -247,7 +247,7 @@ func getInitialize(c echo.Context) error {
 		}
 	}
 
-	channelList = make([]ChannelInfo, 0, 50)
+	channelList = make([]ChannelInfo, 0, 512)
 	err = db.Select(&channelList, "SELECT * FROM channel ORDER BY id")
 	if err != nil {
 		fmt.Println(err)
@@ -358,24 +358,17 @@ func getLogout(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, "/")
 }
 
-// 何が遅いんねん ??????
-// なんもわからん
 func postMessage(c echo.Context) error {
-	// Userゲットしてるだけ
-	// gorilla/sessionsが悪っぽい
-	// じゃなんで他のタイムアウトしないん？
 	user, err := ensureLogin(c)
 	if user == nil {
 		return err
 	}
 
-	// これは一瞬
 	message := c.FormValue("message")
 	if message == "" {
 		return echo.ErrForbidden
 	}
 
-	// 一瞬
 	var chanID int64
 	if x, err := strconv.Atoi(c.FormValue("channel_id")); err != nil {
 		return echo.ErrForbidden
@@ -383,7 +376,6 @@ func postMessage(c echo.Context) error {
 		chanID = int64(x)
 	}
 
-	// INSERTしてるだけやがINDEXのB+Tree生成に時間にかかっている訳ではない
 	if _, err := addMessage(chanID, user.ID, message); err != nil {
 		return err
 	}
