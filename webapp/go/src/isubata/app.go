@@ -336,7 +336,7 @@ func postLogin(c echo.Context) error {
 
 	var user User
 	err := db.Get(&user, "SELECT id, salt, password FROM user WHERE name = ?", name)
-	fmt.Printf("SELECT * FROM user WHERE name = %s", name)
+	fmt.Println("SELECT * FROM user WHERE name = %s", name)
 	if err == sql.ErrNoRows {
 		return echo.ErrForbidden
 	} else if err != nil {
@@ -776,9 +776,9 @@ func main() {
 		templates: template.Must(template.New("").Funcs(funcs).ParseGlob("views/*.html")),
 	}
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte("secretonymoris"))))
-	// e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-	// 	Format: "request:\"${method} ${uri}\" status:${status} latency:${latency} (${latency_human}) bytes:${bytes_out}\n",
-	// }))
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "request:\"${method} ${uri}\" status:${status} latency:${latency} (${latency_human}) bytes:${bytes_out}\n",
+	}))
 	e.Use(middleware.Static("../public"))
 
 	e.GET("/initialize", getInitialize)
