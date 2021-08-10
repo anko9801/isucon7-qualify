@@ -514,7 +514,6 @@ func fetchUnread(c echo.Context) error {
 		fmt.Println(err)
 		return err
 	}
-	return c.JSON(http.StatusOK, resp)
 
 	for i := range IDs {
 		var cnt int64
