@@ -210,12 +210,25 @@ type Image struct {
 	Data []byte `db:"data"`
 }
 
+type ChannelInfo struct {
+	ID          int64     `db:"id"`
+	Name        string    `db:"name"`
+	Description string    `db:"description"`
+	UpdatedAt   time.Time `db:"updated_at"`
+	CreatedAt   time.Time `db:"created_at"`
+}
+
+var (
+	channelList []ChannelInfo
+)
+
 func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM user WHERE id > 1000")
 	db.MustExec("DELETE FROM image WHERE id > 1001")
 	db.MustExec("DELETE FROM channel WHERE id > 10")
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
+
 	var images []Image
 	err := db.Select(&images, "SELECT name, data FROM image")
 	if err != nil {
@@ -233,6 +246,13 @@ func getInitialize(c echo.Context) error {
 			return err
 		}
 	}
+
+	channelList = make([]ChannelInfo, 0, 50)
+	err = db.Select(&channelList, "SELECT * FROM channel ORDER BY id")
+	if err != nil {
+		fmt.Println(err)
+		return ErrBadReqeust
+	}
 	return c.String(204, "")
 }
 
@@ -247,14 +267,6 @@ func getIndex(c echo.Context) error {
 	})
 }
 
-type ChannelInfo struct {
-	ID          int64     `db:"id"`
-	Name        string    `db:"name"`
-	Description string    `db:"description"`
-	UpdatedAt   time.Time `db:"updated_at"`
-	CreatedAt   time.Time `db:"created_at"`
-}
-
 func getChannel(c echo.Context) error {
 	user, err := ensureLogin(c)
 	if user == nil {
@@ -264,14 +276,9 @@ func getChannel(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	channels := []ChannelInfo{}
-	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
-	if err != nil {
-		return err
-	}
 
 	var desc string
-	for _, ch := range channels {
+	for _, ch := range channelList {
 		if ch.ID == int64(cID) {
 			desc = ch.Description
 			break
@@ -279,7 +286,7 @@ func getChannel(c echo.Context) error {
 	}
 	return c.Render(http.StatusOK, "channel", map[string]interface{}{
 		"ChannelID":   cID,
-		"Channels":    channels,
+		"Channels":    channelList,
 		"User":        user,
 		"Description": desc,
 	})
@@ -587,15 +594,9 @@ func getHistory(c echo.Context) error {
 		return err
 	}
 
-	channels := []ChannelInfo{}
-	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
-	if err != nil {
-		return err
-	}
-
 	return c.Render(http.StatusOK, "history", map[string]interface{}{
 		"ChannelID": chID,
-		"Channels":  channels,
+		"Channels":  channelList,
 		"Messages":  mjson,
 		"MaxPage":   maxPage,
 		"Page":      page,
@@ -606,12 +607,6 @@ func getHistory(c echo.Context) error {
 func getProfile(c echo.Context) error {
 	self, err := ensureLogin(c)
 	if self == nil {
-		return err
-	}
-
-	channels := []ChannelInfo{}
-	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
-	if err != nil {
 		return err
 	}
 
@@ -627,7 +622,7 @@ func getProfile(c echo.Context) error {
 
 	return c.Render(http.StatusOK, "profile", map[string]interface{}{
 		"ChannelID":   0,
-		"Channels":    channels,
+		"Channels":    channelList,
 		"User":        self,
 		"Other":       other,
 		"SelfProfile": self.ID == other.ID,
@@ -640,15 +635,9 @@ func getAddChannel(c echo.Context) error {
 		return err
 	}
 
-	channels := []ChannelInfo{}
-	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
-	if err != nil {
-		return err
-	}
-
 	return c.Render(http.StatusOK, "add_channel", map[string]interface{}{
 		"ChannelID": 0,
-		"Channels":  channels,
+		"Channels":  channelList,
 		"User":      self,
 	})
 }
@@ -665,15 +654,9 @@ func postAddChannel(c echo.Context) error {
 		return ErrBadReqeust
 	}
 
-	res, err := db.Exec(
-		"INSERT INTO channel (name, description, updated_at, created_at) VALUES (?, ?, NOW(), NOW())",
-		name, desc)
-	if err != nil {
-		return err
-	}
-	lastID, _ := res.LastInsertId()
+	channelList = append(channelList, ChannelInfo{int64(len(channelList) + 1), name, desc, time.Now(), time.Now()})
 	return c.Redirect(http.StatusSeeOther,
-		fmt.Sprintf("/channel/%v", lastID))
+		fmt.Sprintf("/channel/%v", len(channelList)))
 }
 
 func postProfile(c echo.Context) error {
