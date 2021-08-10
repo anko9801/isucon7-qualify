@@ -81,7 +81,7 @@ func init() {
 	db.SetMaxIdleConns(1024) // デフォルトだと2
 	db.SetConnMaxLifetime(0) // 一応セット
 	// db.SetConnMaxIdleTime(0)
-	db.SetMaxOpenConns(1024)
+	db.SetMaxOpenConns(128)
 	// db.SetConnMaxLifetime(5 * time.Minute)
 	log.Printf("Succeeded to connect db.")
 }
