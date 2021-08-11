@@ -115,7 +115,7 @@ func addMessage(channelID, userID int64, content string) (int64, error) {
 	}
 	res, err := db.Exec(
 		"INSERT INTO message (channel_id, user_id, cnt, content, created_at) VALUES (?, ?, ?, ?, NOW())",
-		channelID, userID, cnt, content)
+		channelID, userID, cnt+1, content)
 	if err != nil {
 		return 0, err
 	}
