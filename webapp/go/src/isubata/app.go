@@ -109,12 +109,12 @@ func getUser(userID int64) (*User, error) {
 
 func addMessage(channelID, userID int64, content string) (int64, error) {
 	var cnt int
-	err := db.Select(&cnt, "SELECT cnt FROM message WHERE channel_id = ? ORDER BY id DESC LIMIT 1", channelID)
+	err := db.Select(&cnt, "SELECT `cumulative_sum` FROM message WHERE channel_id = ? ORDER BY id DESC LIMIT 1", channelID)
 	if err != nil {
 		return 0, err
 	}
 	res, err := db.Exec(
-		"INSERT INTO message (channel_id, user_id, cnt, content, created_at) VALUES (?, ?, ?, ?, NOW())",
+		"INSERT INTO message (channel_id, user_id, cumulative_sum, content, created_at) VALUES (?, ?, ?, ?, NOW())",
 		channelID, userID, cnt+1, content)
 	if err != nil {
 		return 0, err
@@ -265,7 +265,7 @@ func getInitialize(c echo.Context) error {
 			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", channelList[i].ID)
 
 		for count := 0; count < cnt; count++ {
-			_, err = db.Exec("UPDATE message SET cumulative_sum = ? WHERE id = (SELECT id FROM message WHERE channel_id = ? ORDER BY id LIMIT 1 OFFSET ?)", count+1, channelList[i].ID, count)
+			_, err = db.Exec("UPDATE message SET `cumulative_sum` = ? WHERE id = (SELECT id FROM message WHERE channel_id = ? ORDER BY id LIMIT 1 OFFSET ?)", count+1, channelList[i].ID, count)
 			if err != nil {
 				fmt.Println(err)
 				return ErrBadReqeust
@@ -537,7 +537,7 @@ func fetchUnread(c echo.Context) error {
 	for i := range IDs {
 		var cnt int64
 		err = db.Get(&cnt,
-			"SELECT cumulative_sum FROM message WHERE channel_id = ? AND id = ?",
+			"SELECT `cumulative_sum` FROM message WHERE channel_id = ? AND id = ?",
 			IDs[i].Channel, IDs[i].Message)
 
 		// err = db.Get(&cnt,
