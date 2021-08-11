@@ -529,9 +529,9 @@ func fetchUnread(c echo.Context) error {
 			"SELECT count FROM message WHERE channel_id = ? AND id = ?",
 			IDs[i].Channel, IDs[i].Message)
 
-		err = db.Get(&cnt,
-			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
-			IDs[i].Channel, IDs[i].Message)
+		// err = db.Get(&cnt,
+		// "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
+		// IDs[i].Channel, IDs[i].Message)
 		// if lastID > 0 {
 		// 	err = db.Get(&cnt,
 		// 		"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
