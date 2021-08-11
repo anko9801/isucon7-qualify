@@ -233,6 +233,7 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM channel WHERE id > 10")
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
+	db.MustExec("ALTER TABLE message ADD COLUMN cumulative_sum INT")
 
 	var images []Image
 	err := db.Select(&images, "SELECT name, data FROM image")
@@ -265,7 +266,7 @@ func getInitialize(c echo.Context) error {
 			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", channelList[i].ID)
 
 		for count := 0; count < cnt; count++ {
-			_, err = db.Exec("UPDATE message SET `cumulative_sum` = ? WHERE id = (SELECT id FROM message WHERE channel_id = ? ORDER BY id LIMIT 1 OFFSET ?)", count+1, channelList[i].ID, count)
+			_, err = db.Exec("UPDATE message SET cumulative_sum = ? WHERE id = (SELECT id FROM message WHERE channel_id = ? ORDER BY id LIMIT 1 OFFSET ?)", count+1, channelList[i].ID, count)
 			if err != nil {
 				fmt.Println(err)
 				return ErrBadReqeust
