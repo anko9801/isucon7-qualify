@@ -126,6 +126,7 @@ type Message struct {
 	ID        int64     `db:"id"`
 	ChannelID int64     `db:"channel_id"`
 	UserID    int64     `db:"user_id"`
+	Count     int       `db:"cumulative_sum"`
 	Content   string    `db:"content"`
 	CreatedAt time.Time `db:"created_at"`
 }
