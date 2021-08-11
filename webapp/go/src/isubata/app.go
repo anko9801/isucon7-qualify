@@ -229,8 +229,6 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
 
-	db.MustExec("OPTIMIZE TABLE user, image, channel, message, haveread")
-
 	var images []Image
 	err := db.Select(&images, "SELECT name, data FROM image")
 	if err != nil {
