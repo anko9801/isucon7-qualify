@@ -261,6 +261,7 @@ func getInitialize(c echo.Context) error {
 			return err
 		}
 	}
+	fmt.Println("image local kan")
 
 	channelList = make([]ChannelInfo, 0, 1000)
 	err = db.Select(&channelList, "SELECT * FROM channel ORDER BY id")
@@ -268,6 +269,7 @@ func getInitialize(c echo.Context) error {
 		fmt.Println(err)
 		return ErrBadReqeust
 	}
+	fmt.Println("channelList kan")
 
 	for i := len(channelList) - 1; i >= 0; i-- {
 		var cnt int
@@ -281,6 +283,7 @@ func getInitialize(c echo.Context) error {
 		channelList[i].HavereadCount = 0
 		channelMap[channelList[i].ID] = &channelList[i]
 	}
+	fmt.Println("channelMap kan")
 	return c.String(204, "")
 }
 
