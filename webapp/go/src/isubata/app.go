@@ -229,6 +229,8 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
 
+	db.MustExec("OPTIMIZE TABLE user, image, channel, message, haveread")
+
 	var images []Image
 	err := db.Select(&images, "SELECT name, data FROM image")
 	if err != nil {
@@ -254,13 +256,13 @@ func getInitialize(c echo.Context) error {
 		return ErrBadReqeust
 	}
 
-	for i := len(channelList) - 1; i >= 0; i-- {
-		_, err = db.Exec("UPDATE message WHERE channel_id = ? ORDER BY id SET cnt = @counter := @counter + 1", channelList[i].ID)
-		if err != nil {
-			fmt.Println(err)
-			return ErrBadReqeust
-		}
-	}
+	// for i := len(channelList) - 1; i >= 0; i-- {
+	// 	_, err = db.Exec("UPDATE message WHERE channel_id = ? ORDER BY id SET cnt = @counter := @counter + 1", channelList[i].ID)
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 		return ErrBadReqeust
+	// 	}
+	// }
 	return c.String(204, "")
 }
 
@@ -525,13 +527,13 @@ func fetchUnread(c echo.Context) error {
 
 	for i := range IDs {
 		var cnt int64
-		err = db.Get(&cnt,
-			"SELECT cnt FROM message WHERE channel_id = ? AND id = ?",
-			IDs[i].Channel, IDs[i].Message)
-
 		// err = db.Get(&cnt,
-		// "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
-		// IDs[i].Channel, IDs[i].Message)
+		// 	"SELECT cnt FROM message WHERE channel_id = ? AND id = ?",
+		// 	IDs[i].Channel, IDs[i].Message)
+
+		err = db.Get(&cnt,
+			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
+			IDs[i].Channel, IDs[i].Message)
 		// if lastID > 0 {
 		// 	err = db.Get(&cnt,
 		// 		"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
