@@ -242,6 +242,7 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM channel WHERE id > 10")
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
+	fmt.Println("Initialize")
 
 	var images []Image
 	err := db.Select(&images, "SELECT name, data FROM image")
