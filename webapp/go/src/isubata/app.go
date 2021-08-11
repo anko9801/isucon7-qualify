@@ -235,10 +235,11 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
 	fmt.Println("Initialize")
-	db.Exec("ALTER TABLE message ADD COLUMN cumulative_sum INT NOT NULL")
+	_, err := db.Exec("ALTER TABLE message ADD COLUMN cumulative_sum INT NOT NULL")
+	fmt.Println(err)
 
 	var images []Image
-	err := db.Select(&images, "SELECT name, data FROM image")
+	err = db.Select(&images, "SELECT name, data FROM image")
 	if err != nil {
 		fmt.Println(err)
 		return ErrBadReqeust
