@@ -108,9 +108,14 @@ func getUser(userID int64) (*User, error) {
 }
 
 func addMessage(channelID, userID int64, content string) (int64, error) {
+	var cnt int
+	err := db.Select(&cnt, "SELECT cnt FROM message WHERE channel_id = ? ORDER BY id DESC LIMIT 1", channelID)
+	if err != nil {
+		return 0, err
+	}
 	res, err := db.Exec(
-		"INSERT INTO message (channel_id, user_id, content, created_at) VALUES (?, ?, ?, NOW())",
-		channelID, userID, content)
+		"INSERT INTO message (channel_id, user_id, cnt, content, created_at) VALUES (?, ?, ?, ?, NOW())",
+		channelID, userID, cnt, content)
 	if err != nil {
 		return 0, err
 	}
@@ -254,13 +259,19 @@ func getInitialize(c echo.Context) error {
 		return ErrBadReqeust
 	}
 
-	// for i := len(channelList) - 1; i >= 0; i-- {
-	// 	_, err = db.Exec("UPDATE message WHERE channel_id = ? ORDER BY id SET cnt = @counter := @counter + 1", channelList[i].ID)
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 		return ErrBadReqeust
-	// 	}
-	// }
+	for i := len(channelList) - 1; i >= 0; i-- {
+		var cnt int
+		err = db.Get(&cnt,
+			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", channelList[i].ID)
+
+		for count := 0; count < cnt; count++ {
+			_, err = db.Exec("UPDATE message WHERE channel_id = ? ORDER BY id LIMIT ?, 1 SET cnt = ?", channelList[i].ID, count, count+1)
+			if err != nil {
+				fmt.Println(err)
+				return ErrBadReqeust
+			}
+		}
+	}
 	return c.String(204, "")
 }
 
@@ -525,13 +536,13 @@ func fetchUnread(c echo.Context) error {
 
 	for i := range IDs {
 		var cnt int64
-		// err = db.Get(&cnt,
-		// 	"SELECT cnt FROM message WHERE channel_id = ? AND id = ?",
-		// 	IDs[i].Channel, IDs[i].Message)
-
 		err = db.Get(&cnt,
-			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
+			"SELECT cnt FROM message WHERE channel_id = ? AND id = ?",
 			IDs[i].Channel, IDs[i].Message)
+
+		// err = db.Get(&cnt,
+		// 	"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
+		// 	IDs[i].Channel, IDs[i].Message)
 		// if lastID > 0 {
 		// 	err = db.Get(&cnt,
 		// 		"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
