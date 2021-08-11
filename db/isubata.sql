@@ -27,7 +27,7 @@ CREATE TABLE message (
   id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
   channel_id INT,
   user_id INT,
-  count INT,
+  cnt INT,
   content TEXT,
   created_at DATETIME NOT NULL,
   INDEX idx_channel_id_id (`channel_id`, `id`)
