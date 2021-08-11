@@ -265,7 +265,7 @@ func getInitialize(c echo.Context) error {
 			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", channelList[i].ID)
 
 		for count := 0; count < cnt; count++ {
-			_, err = db.Exec("UPDATE message SET cnt = ? WHERE id = (SELECT id FROM message WHERE channel_id = ? ORDER BY id LIMIT 1 OFFSET ?)", count+1, channelList[i].ID, count)
+			_, err = db.Exec("UPDATE message SET cumulative_sum = ? WHERE id = (SELECT id FROM message WHERE channel_id = ? ORDER BY id LIMIT 1 OFFSET ?)", count+1, channelList[i].ID, count)
 			if err != nil {
 				fmt.Println(err)
 				return ErrBadReqeust
@@ -537,7 +537,7 @@ func fetchUnread(c echo.Context) error {
 	for i := range IDs {
 		var cnt int64
 		err = db.Get(&cnt,
-			"SELECT cnt FROM message WHERE channel_id = ? AND id = ?",
+			"SELECT cumulative_sum FROM message WHERE channel_id = ? AND id = ?",
 			IDs[i].Channel, IDs[i].Message)
 
 		// err = db.Get(&cnt,
