@@ -108,17 +108,13 @@ func getUser(userID int64) (*User, error) {
 }
 
 func addMessage(channelID, userID int64, content string) (int64, error) {
-	var cnt int
-	err := db.Select(&cnt, "SELECT `cumulative_sum` FROM message WHERE channel_id = ? ORDER BY id DESC LIMIT 1", channelID)
-	if err != nil {
-		return 0, err
-	}
 	res, err := db.Exec(
-		"INSERT INTO message (channel_id, user_id, cumulative_sum, content, created_at) VALUES (?, ?, ?, ?, NOW())",
-		channelID, userID, cnt+1, content)
+		"INSERT INTO message (channel_id, user_id, content, created_at) VALUES (?, ?, ?, ?, NOW())",
+		channelID, userID, content)
 	if err != nil {
 		return 0, err
 	}
+	channelMap[int(channelID)].MessageCount++
 	return res.LastInsertId()
 }
 
@@ -126,7 +122,6 @@ type Message struct {
 	ID        int64     `db:"id"`
 	ChannelID int64     `db:"channel_id"`
 	UserID    int64     `db:"user_id"`
-	Count     int       `db:"cumulative_sum"`
 	Content   string    `db:"content"`
 	CreatedAt time.Time `db:"created_at"`
 }
@@ -217,15 +212,28 @@ type Image struct {
 }
 
 type ChannelInfo struct {
-	ID          int64     `db:"id"`
-	Name        string    `db:"name"`
-	Description string    `db:"description"`
-	UpdatedAt   time.Time `db:"updated_at"`
-	CreatedAt   time.Time `db:"created_at"`
+	ID            int       `db:"id"`
+	Name          string    `db:"name"`
+	Description   string    `db:"description"`
+	UpdatedAt     time.Time `db:"updated_at"`
+	CreatedAt     time.Time `db:"created_at"`
+	MessageCount  int
+	HavereadCount int
+}
+
+type ChannelCount struct {
+	ID            int       `db:"id"`
+	Name          string    `db:"name"`
+	Description   string    `db:"description"`
+	UpdatedAt     time.Time `db:"updated_at"`
+	CreatedAt     time.Time `db:"created_at"`
+	MessageCount  int
+	HavereadCount int
 }
 
 var (
 	channelList []ChannelInfo
+	channelMap  map[int]*ChannelInfo
 )
 
 func getInitialize(c echo.Context) error {
@@ -234,9 +242,6 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM channel WHERE id > 10")
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
-	fmt.Println("Initialize")
-	// _, err := db.Exec("ALTER TABLE message ADD COLUMN cumulative_sum INT NOT NULL")
-	// fmt.Println(err)
 
 	var images []Image
 	err := db.Select(&images, "SELECT name, data FROM image")
@@ -256,7 +261,7 @@ func getInitialize(c echo.Context) error {
 		}
 	}
 
-	channelList = make([]ChannelInfo, 0, 512)
+	channelList = make([]ChannelInfo, 0, 1000)
 	err = db.Select(&channelList, "SELECT * FROM channel ORDER BY id")
 	if err != nil {
 		fmt.Println(err)
@@ -267,16 +272,13 @@ func getInitialize(c echo.Context) error {
 		var cnt int
 		err = db.Get(&cnt,
 			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", channelList[i].ID)
-		fmt.Println(err)
-
-		for count := 0; count < cnt; count++ {
-			_, err = db.Exec("UPDATE message SET cumulative_sum = ? WHERE id = (SELECT id FROM (SELECT id FROM message WHERE channel_id = ? ORDER BY id LIMIT 1 OFFSET ?) tmp)", count+1, channelList[i].ID, count)
-			fmt.Println(count)
-			if err != nil {
-				fmt.Println(err)
-				return ErrBadReqeust
-			}
+		if err != nil {
+			fmt.Println(err)
+			return err
 		}
+		channelList[i].MessageCount = cnt
+		channelList[i].HavereadCount = 0
+		channelMap[channelList[i].ID] = &channelList[i]
 	}
 	return c.String(204, "")
 }
@@ -304,7 +306,7 @@ func getChannel(c echo.Context) error {
 
 	var desc string
 	for _, ch := range channelList {
-		if ch.ID == int64(cID) {
+		if ch.ID == cID {
 			desc = ch.Description
 			break
 		}
@@ -481,6 +483,7 @@ func getMessage(c echo.Context) error {
 			" VALUES (?, ?, ?, NOW(), NOW())"+
 			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
 			userID, chanID, messages[0].ID, messages[0].ID)
+		channelList[chanID].HavereadCount += len(messages)
 		if err != nil {
 			return err
 		}
@@ -489,8 +492,8 @@ func getMessage(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func queryChannels() ([]int64, error) {
-	res := make([]int64, 0, len(channelList))
+func queryChannels() ([]int, error) {
+	res := make([]int, 0, len(channelList))
 	for i := len(channelList) - 1; i >= 0; i-- {
 		res = append(res, channelList[i].ID)
 	}
@@ -502,7 +505,7 @@ type binID struct {
 	Channel int64 `db:"channel_id"`
 }
 
-func queryHaveRead(userID int64, chID []int64) ([]binID, error) {
+func queryHaveRead(userID int64, chID []int) ([]binID, error) {
 	IDs := []binID{}
 
 	query, args, err := sqlx.In("SELECT message_id, channel_id FROM haveread WHERE user_id = ? AND channel_id IN (?)", userID, chID)
@@ -533,19 +536,16 @@ func fetchUnread(c echo.Context) error {
 		return err
 	}
 
-	resp := []map[string]interface{}{}
 	IDs, err := queryHaveRead(userID, channels)
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 
+	resp := []map[string]interface{}{}
 	for i := range IDs {
-		var cnt int64
-		err = db.Get(&cnt,
-			"SELECT `cumulative_sum` FROM message WHERE channel_id = ? AND id = ?",
-			IDs[i].Channel, IDs[i].Message)
-
+		var cnt int
+		cnt = channelMap[int(IDs[i].Channel)].MessageCount - channelMap[int(IDs[i].Channel)].HavereadCount
 		// err = db.Get(&cnt,
 		// 	"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
 		// 	IDs[i].Channel, IDs[i].Message)
@@ -594,11 +594,12 @@ func getHistory(c echo.Context) error {
 	}
 
 	const N = 20
-	var cnt int64
-	err = db.Get(&cnt, "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", chID)
-	if err != nil {
-		return err
-	}
+	var cnt int
+	cnt = channelMap[int(chID)].MessageCount
+	//err = db.Get(&cnt, "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", chID)
+	// if err != nil {
+	// 	return err
+	// }
 	maxPage := int64(cnt+N-1) / N
 	if maxPage == 0 {
 		maxPage = 1
@@ -680,7 +681,7 @@ func postAddChannel(c echo.Context) error {
 		return ErrBadReqeust
 	}
 
-	channelList = append(channelList, ChannelInfo{int64(len(channelList) + 1), name, desc, time.Now(), time.Now()})
+	channelList = append(channelList, ChannelInfo{len(channelList) + 1, name, desc, time.Now(), time.Now(), 0, 0})
 	return c.Redirect(http.StatusSeeOther,
 		fmt.Sprintf("/channel/%v", len(channelList)))
 }
