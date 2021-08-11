@@ -268,7 +268,7 @@ func getInitialize(c echo.Context) error {
 			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", channelList[i].ID)
 
 		for count := 0; count < cnt; count++ {
-			_, err = db.Exec("UPDATE message SET cumulative_sum = ? WHERE id = (SELECT id FROM message WHERE channel_id = ? ORDER BY id LIMIT 1 OFFSET ?)", count+1, channelList[i].ID, count)
+			_, err = db.Exec("UPDATE message SET cumulative_sum = ? WHERE id = (SELECT id FROM (SELECT id FROM message WHERE channel_id = ? ORDER BY id LIMIT 1 OFFSET ?) tmp)", count+1, channelList[i].ID, count)
 			if err != nil {
 				fmt.Println(count)
 				fmt.Println(err)
