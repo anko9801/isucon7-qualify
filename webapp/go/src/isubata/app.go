@@ -536,7 +536,7 @@ func fetchUnread(c echo.Context) error {
 		return c.NoContent(http.StatusForbidden)
 	}
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	channels, err := queryChannels()
 	if err != nil {
@@ -551,13 +551,15 @@ func fetchUnread(c echo.Context) error {
 	}
 
 	resp := []map[string]interface{}{}
+	var cnt int
 	for i := range IDs {
-		var cnt int
 		cnt = channelMap[int(IDs[i].Channel)].MessageCount - channelMap[int(IDs[i].Channel)].HavereadCount
-		channelMap[int(IDs[i].Channel)].HavereadCount = channelMap[int(IDs[i].Channel)].MessageCount
-		// err = db.Get(&cnt,
-		// 	"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
-		// 	IDs[i].Channel, IDs[i].Message)
+		channelMap[int(IDs[i].Channel)].HavereadCount += cnt
+		var cnt2 int
+		err = db.Get(&cnt2,
+			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
+			IDs[i].Channel, IDs[i].Message)
+		fmt.Println(cnt, cnt2)
 		// if lastID > 0 {
 		// 	err = db.Get(&cnt,
 		// 		"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
@@ -573,7 +575,7 @@ func fetchUnread(c echo.Context) error {
 		}
 		r := map[string]interface{}{
 			"channel_id": IDs[i].Channel,
-			"unread":     cnt}
+			"unread":     cnt2}
 		resp = append(resp, r)
 	}
 
