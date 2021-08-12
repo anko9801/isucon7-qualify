@@ -221,7 +221,7 @@ func register(name, password string) (int64, error) {
 	}
 	userID, err := res.LastInsertId()
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	fmt.Println(userID, len(userList))
 	userList = append(userList, User{userID, name, salt, digest, name, "default.png", time.Now()})
