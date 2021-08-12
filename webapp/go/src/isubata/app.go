@@ -218,14 +218,16 @@ func register(name, password string) (int64, error) {
 	// if err != nil {
 	// 	return 0, err
 	// }
-	userID := int64(len(userList))
 	// userID, err := res.LastInsertId()
 	// if err != nil {
 	// 	return 0, err
 	// }
-	fmt.Println(userID, len(userList))
+	userID := int64(len(userList))
 	userList = append(userList, User{userID, name, salt, digest, name, "default.png", time.Now()})
 	userMap[userID] = &userList[len(userList)-1]
+	if userNameMap[userID] != nil {
+		return 0, Error("Duplicate")
+	}
 	return userID, nil
 }
 
@@ -370,6 +372,9 @@ func postRegister(c echo.Context) error {
 	}
 	userID, err := register(name, pw)
 	if err != nil {
+		if err == Error("Duplicate") {
+			return c.NoContent(http.StatusConflict)
+		}
 		if merr, ok := err.(*mysql.MySQLError); ok {
 			if merr.Number == 1062 { // Duplicate entry xxxx for key zzzz
 				return c.NoContent(http.StatusConflict)
