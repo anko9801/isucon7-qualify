@@ -155,9 +155,7 @@ func sessSetUserID(c echo.Context, id int64) {
 	if !ok {
 		return
 	}
-	setSession(w, SessionData{
-		id, randomString(20)
-	})
+	setSession(w, SessionData{id, randomString(20)})
 	// sess, _ := session.Get("session", c)
 	// sess.Options = &sessions.Options{
 	// 	HttpOnly: true,
@@ -179,10 +177,10 @@ func ensureLogin(c echo.Context) (*User, error) {
 	}
 	userID := sess.UserID
 
-// 	userID := sessUserID(c)
-// 	if userID == 0 {
-// 		goto redirect
-// 	}
+	// 	userID := sessUserID(c)
+	// 	if userID == 0 {
+	// 		goto redirect
+	// 	}
 
 	user, err = getUser(userID)
 	if err != nil {
@@ -194,12 +192,12 @@ func ensureLogin(c echo.Context) (*User, error) {
 		deleteSession(r, w)
 		goto redirect
 	}
-// 	if user == nil {
-// 		sess, _ := session.Get("session", c)
-// 		delete(sess.Values, "user_id")
-// 		sess.Save(c.Request(), c.Response())
-// 		goto redirect
-// 	}
+	// 	if user == nil {
+	// 		sess, _ := session.Get("session", c)
+	// 		delete(sess.Values, "user_id")
+	// 		sess.Save(c.Request(), c.Response())
+	// 		goto redirect
+	// 	}
 	return user, nil
 
 redirect:
@@ -565,8 +563,7 @@ func fetchUnread(c echo.Context) error {
 		}
 		r := map[string]interface{}{
 			"channel_id": IDs[i].Channel,
-			"unread":     c.MessageCount - IDs[i].Num
-		}
+			"unread":     c.MessageCount - IDs[i].Num}
 		resp = append(resp, r)
 	}
 
