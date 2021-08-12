@@ -32,6 +32,7 @@ const (
 var (
 	db            *sqlx.DB
 	ErrBadReqeust = echo.NewHTTPError(http.StatusBadRequest)
+	ErrNotFound   = echo.ErrNotFound
 )
 
 type Renderer struct {
@@ -407,7 +408,7 @@ func postLogin(c echo.Context) error {
 	// 	return err
 	// }
 	if user == nil {
-		return ErrBadReqeust
+		return ErrNotFound
 	}
 
 	digest := fmt.Sprintf("%x", sha1.Sum([]byte(user.Salt+pw)))
@@ -665,7 +666,7 @@ func getProfile(c echo.Context) error {
 	// }
 	other := userNameMap[userName]
 	if other == nil {
-		return ErrBadReqeust
+		return ErrNotFound
 	}
 
 	return c.Render(http.StatusOK, "profile", map[string]interface{}{
