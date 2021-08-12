@@ -253,11 +253,13 @@ func getInitialize(c echo.Context) error {
 	for i := 0; i < len(images); i++ {
 		file, err := os.Create(images[i].Name)
 		if err != nil {
+			fmt.Println(err)
 			return err
 		}
 		defer file.Close()
 		_, err = file.Write(images[i].Data)
 		if err != nil {
+			fmt.Println(err)
 			return err
 		}
 	}
