@@ -40,3 +40,10 @@ CREATE TABLE haveread (
   created_at DATETIME NOT NULL,
   PRIMARY KEY(user_id, channel_id)
 ) Engine=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE haveread_count (
+  user_id BIGINT NOT NULL,
+  channel_id BIGINT NOT NULL,
+  num INT,
+  PRIMARY KEY(user_id, channel_id)
+) Engine=InnoDB DEFAULT CHARSET=utf8mb4;

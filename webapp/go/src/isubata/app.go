@@ -212,23 +212,12 @@ type Image struct {
 }
 
 type ChannelInfo struct {
-	ID            int       `db:"id"`
-	Name          string    `db:"name"`
-	Description   string    `db:"description"`
-	UpdatedAt     time.Time `db:"updated_at"`
-	CreatedAt     time.Time `db:"created_at"`
-	MessageCount  int
-	HavereadCount int
-}
-
-type ChannelCount struct {
-	ID            int       `db:"id"`
-	Name          string    `db:"name"`
-	Description   string    `db:"description"`
-	UpdatedAt     time.Time `db:"updated_at"`
-	CreatedAt     time.Time `db:"created_at"`
-	MessageCount  int
-	HavereadCount int
+	ID           int       `db:"id"`
+	Name         string    `db:"name"`
+	Description  string    `db:"description"`
+	UpdatedAt    time.Time `db:"updated_at"`
+	CreatedAt    time.Time `db:"created_at"`
+	MessageCount int
 }
 
 var (
@@ -241,7 +230,8 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM image WHERE id > 1001")
 	db.MustExec("DELETE FROM channel WHERE id > 10")
 	db.MustExec("DELETE FROM message WHERE id > 10000")
-	db.MustExec("DELETE FROM haveread")
+	// db.MustExec("DELETE FROM haveread")
+	db.MustExec("DELETE FROM haveread_count")
 	fmt.Println("Initialize")
 
 	var images []Image
@@ -284,7 +274,6 @@ func getInitialize(c echo.Context) error {
 			return err
 		}
 		channelList[i].MessageCount = cnt
-		channelList[i].HavereadCount = 0
 		channelMap[channelList[i].ID] = &channelList[i]
 	}
 	fmt.Println("channelMap kan")
@@ -487,12 +476,14 @@ func getMessage(c echo.Context) error {
 	}
 
 	if len(messages) > 0 {
-		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
-			" VALUES (?, ?, ?, NOW(), NOW())"+
-			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
-			userID, chanID, messages[0].ID, messages[0].ID)
-		fmt.Println(channelMap[int(chanID)].HavereadCount, len(messages))
-		channelMap[int(chanID)].HavereadCount += len(messages)
+		// _, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
+		// 	" VALUES (?, ?, ?, NOW(), NOW())"+
+		// 	" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
+		// 	userID, chanID, messages[0].ID, messages[0].ID)
+		// if err != nil {
+		// 	return err
+		// }
+		_, err = db.Exec("INSERT INTO haveread_count (user_id, channel_id, num) VALUES (?, ?, ?)", userID, chanID, len(messages))
 		if err != nil {
 			return err
 		}
@@ -510,19 +501,14 @@ func queryChannels() ([]int, error) {
 }
 
 type binID struct {
-	Message int64 `db:"message_id"`
 	Channel int64 `db:"channel_id"`
+	Num     int   `db:"num"`
 }
 
-func queryHaveRead(userID int64, chID []int) ([]binID, error) {
+func queryHaveRead(userID int64) ([]binID, error) {
 	IDs := []binID{}
 
-	query, args, err := sqlx.In("SELECT message_id, channel_id FROM haveread WHERE user_id = ? AND channel_id IN (?)", userID, chID)
-	if err != nil {
-		return nil, err
-	}
-	err = db.Select(&IDs, query, args...)
-
+	err := db.Select(&IDs, "SELECT channel_id, num FROM haveread_count WHERE user_id = ?", userID)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
@@ -531,6 +517,7 @@ func queryHaveRead(userID int64, chID []int) ([]binID, error) {
 	return IDs, nil
 }
 
+// あるユーザーについて全てのチャンネルで未読のカウントを返す
 func fetchUnread(c echo.Context) error {
 	userID := sessUserID(c)
 	if userID == 0 {
@@ -539,13 +526,7 @@ func fetchUnread(c echo.Context) error {
 
 	time.Sleep(100 * time.Millisecond)
 
-	channels, err := queryChannels()
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	IDs, err := queryHaveRead(userID, channels)
+	IDs, err := queryHaveRead(userID)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -554,14 +535,10 @@ func fetchUnread(c echo.Context) error {
 	resp := []map[string]interface{}{}
 	var cnt int
 	for i := range IDs {
-		cnt = channelMap[int(IDs[i].Channel)].MessageCount - channelMap[int(IDs[i].Channel)].HavereadCount
-		var cnt2 int
-		err = db.Get(&cnt2,
-			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
-			IDs[i].Channel, IDs[i].Message)
-		fmt.Println(cnt, channelMap[int(IDs[i].Channel)].MessageCount, channelMap[int(IDs[i].Channel)].HavereadCount)
-		channelMap[int(IDs[i].Channel)].HavereadCount += cnt
-		fmt.Println(cnt2)
+		c := channelMap[int(IDs[i].Channel)]
+		cnt = c.MessageCount - IDs[i].Num
+		fmt.Println(cnt, c.MessageCount, IDs[i].Num)
+		_, err = db.Exec("UPDATE haveread_count SET num = ? WHERE user_id = ? AND channel_id = ?", c.MessageCount, userID, IDs[i].Channel)
 		// if lastID > 0 {
 		// 	err = db.Get(&cnt,
 		// 		"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
@@ -577,7 +554,7 @@ func fetchUnread(c echo.Context) error {
 		}
 		r := map[string]interface{}{
 			"channel_id": IDs[i].Channel,
-			"unread":     cnt2}
+			"unread":     cnt}
 		resp = append(resp, r)
 	}
 
