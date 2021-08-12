@@ -219,9 +219,10 @@ func register(name, password string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	userList = append(userList, User{name, salt, digest, name, "default.png", time.Now()})
-	userMap[res.LastInsertId()] = &userList[len(userList)-1]
-	return res.LastInsertId()
+	userID := len(userList)
+	userList = append(userList, User{userID, name, salt, digest, name, "default.png", time.Now()})
+	userMap[userID] = &userList[userID]
+	return userID, nil
 }
 
 // request handlers
