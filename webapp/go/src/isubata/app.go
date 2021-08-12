@@ -274,6 +274,7 @@ func getInitialize(c echo.Context) error {
 	}
 	fmt.Println("channelList kan")
 
+	channelMap = make(map[int]*ChannelInfo, 1000)
 	for i := len(channelList) - 1; i >= 0; i-- {
 		var cnt int
 		err = db.Get(&cnt,
