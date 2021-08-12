@@ -212,7 +212,7 @@ func register(name, password string) (int64, error) {
 	salt := randomString(20)
 	digest := fmt.Sprintf("%x", sha1.Sum([]byte(salt+password)))
 
-	res, err := db.Exec(
+	_, err := db.Exec(
 		"INSERT INTO user (name, salt, password, display_name, avatar_icon, created_at)"+
 			" VALUES (?, ?, ?, ?, ?, NOW())",
 		name, salt, digest, name, "default.png")
