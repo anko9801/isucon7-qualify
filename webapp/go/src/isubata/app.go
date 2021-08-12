@@ -212,13 +212,13 @@ func register(name, password string) (int64, error) {
 	salt := randomString(20)
 	digest := fmt.Sprintf("%x", sha1.Sum([]byte(salt+password)))
 
-	_, err := db.Exec(
-		"INSERT INTO user (name, salt, password, display_name, avatar_icon, created_at)"+
-			" VALUES (?, ?, ?, ?, ?, NOW())",
-		name, salt, digest, name, "default.png")
-	if err != nil {
-		return 0, err
-	}
+	// _, err := db.Exec(
+	// 	"INSERT INTO user (name, salt, password, display_name, avatar_icon, created_at)"+
+	// 		" VALUES (?, ?, ?, ?, ?, NOW())",
+	// 	name, salt, digest, name, "default.png")
+	// if err != nil {
+	// 	return 0, err
+	// }
 	userID := int64(len(userList))
 	// userID, err := res.LastInsertId()
 	// if err != nil {
@@ -251,6 +251,7 @@ var (
 	channelMap  map[int]*ChannelInfo
 	userList    []User
 	userMap     map[int64]*User
+	userNameMap map[string]*User
 )
 
 func getInitialize(c echo.Context) error {
@@ -309,8 +310,10 @@ func getInitialize(c echo.Context) error {
 	}
 
 	userMap = make(map[int64]*User, 5000)
+	userNameMap = make(map[string]*User, 5000)
 	for i := 0; i < len(userList); i++ {
 		userMap[userList[i].ID] = &userList[i]
+		userNameMap[userList[i].Name] = &userList[i]
 	}
 
 	return c.String(204, "")
@@ -395,8 +398,9 @@ func postLogin(c echo.Context) error {
 	}
 
 	var user User
-	err := db.Get(&user, "SELECT id, salt, password FROM user WHERE name = ?", name)
+	// err := db.Get(&user, "SELECT id, salt, password FROM user WHERE name = ?", name)
 	fmt.Println("SELECT * FROM user WHERE name = %s", name)
+	user = userNameMap[name]
 	if err == sql.ErrNoRows {
 		return echo.ErrForbidden
 	} else if err != nil {
@@ -463,26 +467,26 @@ func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 	for id := range messages {
 		userIDs = append(userIDs, id)
 	}
-	query, args, err := sqlx.In("SELECT id, name, display_name, avatar_icon FROM user WHERE id IN (?) ORDER BY id DESC", userIDs)
-	if err != nil {
-		return nil, err
-	}
-	users := []User{}
-	err = db.Select(&users, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	usersMap := map[int64]User{}
-	for i := range users {
-		usersMap[users[i].ID] = users[i]
-	}
+	// query, args, err := sqlx.In("SELECT id, name, display_name, avatar_icon FROM user WHERE id IN (?) ORDER BY id DESC", userIDs)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// users := []User{}
+	// err = db.Select(&users, query, args...)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// usersMap := map[int64]User{}
+	// for i := range users {
+	// 	usersMap[users[i].ID] = users[i]
+	// }
 
 	// JSON生成
 	rs := make([]map[string]interface{}, 0, len(users))
 	for i := len(m) - 1; i >= 0; i-- {
 		r := make(map[string]interface{})
 		r["id"] = m[i].ID
-		r["user"] = usersMap[m[i].UserID]
+		r["user"] = userMap[m[i].UserID]
 		r["date"] = m[i].CreatedAt.Format("2006/01/02 15:04:05")
 		r["content"] = m[i].Content
 		rs = append(rs, r)
@@ -648,14 +652,15 @@ func getProfile(c echo.Context) error {
 	}
 
 	userName := c.Param("user_name")
-	var other User
-	err = db.Get(&other, "SELECT * FROM user WHERE name = ?", userName)
-	if err == sql.ErrNoRows {
-		return echo.ErrNotFound
-	}
-	if err != nil {
-		return err
-	}
+	// var other User
+	// err = db.Get(&other, "SELECT * FROM user WHERE name = ?", userName)
+	// if err == sql.ErrNoRows {
+	// 	return echo.ErrNotFound
+	// }
+	// if err != nil {
+	// 	return err
+	// }
+	other := userNameMap[userName]
 
 	return c.Render(http.StatusOK, "profile", map[string]interface{}{
 		"ChannelID":   0,
@@ -752,7 +757,7 @@ func postProfile(c echo.Context) error {
 		// if err != nil {
 		// 	return err
 		// }
-		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
+		// _, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
 		userMap[self.ID].AvatarIcon = avatarName
 		if err != nil {
 			return err
@@ -760,7 +765,7 @@ func postProfile(c echo.Context) error {
 	}
 
 	if name := c.FormValue("display_name"); name != "" {
-		_, err := db.Exec("UPDATE user SET display_name = ? WHERE id = ?", name, self.ID)
+		// _, err := db.Exec("UPDATE user SET display_name = ? WHERE id = ?", name, self.ID)
 		userMap[self.ID].DisplayName = name
 		if err != nil {
 			return err
