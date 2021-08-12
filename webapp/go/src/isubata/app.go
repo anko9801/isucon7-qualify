@@ -602,6 +602,7 @@ func getHistory(c echo.Context) error {
 	}
 
 	const N = 20
+	fmt.Println(chID)
 	var cnt int
 	cnt = channelMap[int(chID)].MessageCount
 	//err = db.Get(&cnt, "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", chID)
@@ -690,6 +691,7 @@ func postAddChannel(c echo.Context) error {
 	}
 
 	channelList = append(channelList, ChannelInfo{len(channelList) + 1, name, desc, time.Now(), time.Now(), 0, 0})
+	channelMap[len(channelList)] = &channelList[len(channelList)-1]
 	return c.Redirect(http.StatusSeeOther,
 		fmt.Sprintf("/channel/%v", len(channelList)))
 }
