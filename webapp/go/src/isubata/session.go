@@ -89,7 +89,7 @@ func writeCookie(w http.ResponseWriter, token string) {
 		Domain:   "",
 		Secure:   false,
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		// SameSite: http.SameSiteLaxMode,
 	}
 
 	w.Header().Add("Set-Cookie", cookie.String())
