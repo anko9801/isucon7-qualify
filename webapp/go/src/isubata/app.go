@@ -483,7 +483,7 @@ func getMessage(c echo.Context) error {
 		// if err != nil {
 		// 	return err
 		// }
-		_, err = db.Exec("INSERT INTO haveread_count (user_id, channel_id, num) VALUES (?, ?, ?)", userID, chanID, len(messages))
+		_, err = db.Exec("UPDATE haveread_count SET num = ? WHERE user_id = ? AND channel_id = ?", len(messages), userID, chanID)
 		fmt.Println("getMessage", userID, chanID, len(messages))
 		if err != nil {
 			return err
