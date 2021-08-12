@@ -225,7 +225,7 @@ func register(name, password string) (int64, error) {
 	}
 	fmt.Println(userID, len(userList))
 	userList = append(userList, User{userID, name, salt, digest, name, "default.png", time.Now()})
-	userMap[userID] = &userList[userID]
+	userMap[userID] = &userList[userID-1]
 	return userID, nil
 }
 
