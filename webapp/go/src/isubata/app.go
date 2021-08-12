@@ -149,12 +149,7 @@ func sessUserID(c echo.Context) int64 {
 }
 
 func sessSetUserID(c echo.Context, id int64) {
-	r := c.Request()
 	w := c.Response().Writer
-	sessionData, ok := getSession(r)
-	if !ok {
-		return
-	}
 	setSession(w, SessionData{id, randomString(20)})
 	// sess, _ := session.Get("session", c)
 	// sess.Options = &sessions.Options{
