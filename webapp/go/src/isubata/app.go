@@ -484,6 +484,7 @@ func getMessage(c echo.Context) error {
 		// 	return err
 		// }
 		_, err = db.Exec("INSERT INTO haveread_count (user_id, channel_id, num) VALUES (?, ?, ?)", userID, chanID, len(messages))
+		fmt.Println("getMessage", userID, chanID, len(messages))
 		if err != nil {
 			return err
 		}
@@ -514,6 +515,7 @@ func queryHaveRead(userID int64) ([]binID, error) {
 	} else if err != nil {
 		return nil, err
 	}
+	fmt.Println("queryHaveRead", userID)
 	return IDs, nil
 }
 
@@ -537,7 +539,7 @@ func fetchUnread(c echo.Context) error {
 	for i := range IDs {
 		c := channelMap[int(IDs[i].Channel)]
 		cnt = c.MessageCount - IDs[i].Num
-		fmt.Println(cnt, c.MessageCount, IDs[i].Num)
+		fmt.Println("fetchUnread", cnt, c.MessageCount, IDs[i].Num)
 		_, err = db.Exec("UPDATE haveread_count SET num = ? WHERE user_id = ? AND channel_id = ?", c.MessageCount, userID, IDs[i].Channel)
 		// if lastID > 0 {
 		// 	err = db.Get(&cnt,
