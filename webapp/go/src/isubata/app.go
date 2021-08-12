@@ -406,6 +406,9 @@ func postLogin(c echo.Context) error {
 	// } else if err != nil {
 	// 	return err
 	// }
+	if user == nil {
+		return ErrBadReqeust
+	}
 
 	digest := fmt.Sprintf("%x", sha1.Sum([]byte(user.Salt+pw)))
 	if digest != user.Password {
@@ -661,6 +664,9 @@ func getProfile(c echo.Context) error {
 	// 	return err
 	// }
 	other := userNameMap[userName]
+	if other == nil {
+		return ErrBadReqeust
+	}
 
 	return c.Render(http.StatusOK, "profile", map[string]interface{}{
 		"ChannelID":   0,
