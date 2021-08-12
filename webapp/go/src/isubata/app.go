@@ -397,10 +397,10 @@ func postLogin(c echo.Context) error {
 		return ErrBadReqeust
 	}
 
-	var user User
+	// var user User
 	// err := db.Get(&user, "SELECT id, salt, password FROM user WHERE name = ?", name)
 	fmt.Println("SELECT * FROM user WHERE name = %s", name)
-	user = userNameMap[name]
+	user := userNameMap[name]
 	// if err == sql.ErrNoRows {
 	// 	return echo.ErrForbidden
 	// } else if err != nil {
