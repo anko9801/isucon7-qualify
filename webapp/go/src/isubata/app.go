@@ -97,6 +97,8 @@ type User struct {
 }
 
 func getUser(userID int64) (*User, error) {
+	fmt.Println("getUser")
+	fmt.Println(userMap[userID])
 	return userMap[userID], nil
 	// u := User{}
 	// if err := db.Get(&u, "SELECT * FROM user WHERE id = ?", userID); err != nil {
