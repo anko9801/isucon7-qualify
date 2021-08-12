@@ -752,6 +752,7 @@ func postProfile(c echo.Context) error {
 		// 	return err
 		// }
 		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
+		userMap[self.ID].AvatarIcon = avatarName
 		if err != nil {
 			return err
 		}
@@ -759,6 +760,7 @@ func postProfile(c echo.Context) error {
 
 	if name := c.FormValue("display_name"); name != "" {
 		_, err := db.Exec("UPDATE user SET display_name = ? WHERE id = ?", name, self.ID)
+		userMap[self.ID].DisplayName = name
 		if err != nil {
 			return err
 		}
