@@ -671,7 +671,7 @@ func postAddChannel(c echo.Context) error {
 		return ErrBadReqeust
 	}
 
-	channelList = append(channelList, ChannelInfo{len(channelList) + 1, name, desc, time.Now(), time.Now(), 0, 0})
+	channelList = append(channelList, ChannelInfo{len(channelList) + 1, name, desc, time.Now(), time.Now(), 0})
 	channelMap[len(channelList)] = &channelList[len(channelList)-1]
 	return c.Redirect(http.StatusSeeOther,
 		fmt.Sprintf("/channel/%v", len(channelList)))
