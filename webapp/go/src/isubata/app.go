@@ -219,7 +219,8 @@ func register(name, password string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	userID := int64(len(userList))
+	userID := res.LastInsertId()
+	fmt.Println(userID, len(userList))
 	userList = append(userList, User{userID, name, salt, digest, name, "default.png", time.Now()})
 	userMap[userID] = &userList[userID]
 	return userID, nil
