@@ -491,7 +491,8 @@ func getMessage(c echo.Context) error {
 			" VALUES (?, ?, ?, NOW(), NOW())"+
 			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
 			userID, chanID, messages[0].ID, messages[0].ID)
-		channelList[chanID].HavereadCount += len(messages)
+		fmt.Println(channelMap[int(chanID)].HavereadCount, len(messages))
+		channelMap[int(chanID)].HavereadCount += len(messages)
 		if err != nil {
 			return err
 		}
