@@ -555,12 +555,12 @@ func fetchUnread(c echo.Context) error {
 	var cnt int
 	for i := range IDs {
 		cnt = channelMap[int(IDs[i].Channel)].MessageCount - channelMap[int(IDs[i].Channel)].HavereadCount
-		fmt.Println(cnt, channelMap[int(IDs[i].Channel)].MessageCount, channelMap[int(IDs[i].Channel)].HavereadCount)
-		channelMap[int(IDs[i].Channel)].HavereadCount += cnt
 		var cnt2 int
 		err = db.Get(&cnt2,
 			"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
 			IDs[i].Channel, IDs[i].Message)
+		fmt.Println(cnt, channelMap[int(IDs[i].Channel)].MessageCount, channelMap[int(IDs[i].Channel)].HavereadCount)
+		channelMap[int(IDs[i].Channel)].HavereadCount += cnt
 		fmt.Println(cnt2)
 		// if lastID > 0 {
 		// 	err = db.Get(&cnt,
@@ -607,7 +607,6 @@ func getHistory(c echo.Context) error {
 	}
 
 	const N = 20
-	fmt.Println(chID)
 	var cnt int
 	cnt = channelMap[int(chID)].MessageCount
 	//err = db.Get(&cnt, "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", chID)
