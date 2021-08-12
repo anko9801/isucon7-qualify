@@ -165,17 +165,10 @@ func ensureLogin(c echo.Context) (*User, error) {
 	var err error
 	r := c.Request()
 	w := c.Response().Writer
-
-	sess, ok := getSession(r)
-	if !ok {
-		return nil, nil
+	userID := sessUserID(c)
+	if userID == 0 {
+		goto redirect
 	}
-	userID := sess.UserID
-
-	// 	userID := sessUserID(c)
-	// 	if userID == 0 {
-	// 		goto redirect
-	// 	}
 
 	user, err = getUser(userID)
 	if err != nil {
