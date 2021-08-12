@@ -482,7 +482,7 @@ func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 	// }
 
 	// JSON生成
-	rs := make([]map[string]interface{}, 0, len(users))
+	rs := make([]map[string]interface{}, 0, len(userList))
 	for i := len(m) - 1; i >= 0; i-- {
 		r := make(map[string]interface{})
 		r["id"] = m[i].ID
