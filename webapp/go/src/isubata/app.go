@@ -266,6 +266,7 @@ func getInitialize(c echo.Context) error {
 	fmt.Println("image local kan")
 
 	channelList = make([]ChannelInfo, 0, 1000)
+	fmt.Println("make channelList")
 	err = db.Select(&channelList, "SELECT * FROM channel ORDER BY id")
 	if err != nil {
 		fmt.Println(err)
