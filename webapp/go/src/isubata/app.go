@@ -554,6 +554,7 @@ func fetchUnread(c echo.Context) error {
 	for i := range IDs {
 		var cnt int
 		cnt = channelMap[int(IDs[i].Channel)].MessageCount - channelMap[int(IDs[i].Channel)].HavereadCount
+		channelMap[int(IDs[i].Channel)].HavereadCount = channelMap[int(IDs[i].Channel)].MessageCount
 		// err = db.Get(&cnt,
 		// 	"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
 		// 	IDs[i].Channel, IDs[i].Message)
