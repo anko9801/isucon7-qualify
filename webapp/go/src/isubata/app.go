@@ -134,43 +134,72 @@ func queryMessages(chanID, lastID int64) ([]Message, error) {
 }
 
 func sessUserID(c echo.Context) int64 {
-	sess, _ := session.Get("session", c)
-	var userID int64
-	if x, ok := sess.Values["user_id"]; ok {
-		userID, _ = x.(int64)
+	r := c.Request()
+	sessionData, ok := getSession(r)
+	if !ok {
+		return 0
 	}
-	return userID
+	return sessionData.UserID
+	// sess, _ := session.Get("session", c)
+	// var userID int64
+	// if x, ok := sess.Values["user_id"]; ok {
+	// 	userID, _ = x.(int64)
+	// }
+	// return userID
 }
 
 func sessSetUserID(c echo.Context, id int64) {
-	sess, _ := session.Get("session", c)
-	sess.Options = &sessions.Options{
-		HttpOnly: true,
-		MaxAge:   0,
+	r := c.Request()
+	w := c.Response().Writer
+	sessionData, ok := getSession(r)
+	if !ok {
+		return
 	}
-	sess.Values["user_id"] = id
-	sess.Save(c.Request(), c.Response())
+	setSession(w, SessionData{
+		id, randomString(20)
+	})
+	// sess, _ := session.Get("session", c)
+	// sess.Options = &sessions.Options{
+	// 	HttpOnly: true,
+	// 	MaxAge:   0,
+	// }
+	// sess.Values["user_id"] = id
+	// sess.Save(c.Request(), c.Response())
 }
 
 func ensureLogin(c echo.Context) (*User, error) {
 	var user *User
 	var err error
+	r := c.Request()
+	w := c.Response().Writer
 
-	userID := sessUserID(c)
-	if userID == 0 {
-		goto redirect
+	sess, ok := getSession(r)
+	if !ok {
+		return nil, nil
 	}
+	userID := sess.UserID
+
+// 	userID := sessUserID(c)
+// 	if userID == 0 {
+// 		goto redirect
+// 	}
 
 	user, err = getUser(userID)
 	if err != nil {
+		goto redirect
 		return nil, err
 	}
+
 	if user == nil {
-		sess, _ := session.Get("session", c)
-		delete(sess.Values, "user_id")
-		sess.Save(c.Request(), c.Response())
+		deleteSession(r, w)
 		goto redirect
 	}
+// 	if user == nil {
+// 		sess, _ := session.Get("session", c)
+// 		delete(sess.Values, "user_id")
+// 		sess.Save(c.Request(), c.Response())
+// 		goto redirect
+// 	}
 	return user, nil
 
 redirect:
@@ -232,7 +261,6 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	// db.MustExec("DELETE FROM haveread")
 	db.MustExec("DELETE FROM haveread_count")
-	fmt.Println("Initialize")
 
 	var images []Image
 	err := db.Select(&images, "SELECT name, data FROM image")
@@ -253,10 +281,8 @@ func getInitialize(c echo.Context) error {
 			return err
 		}
 	}
-	fmt.Println("image local kan")
 
 	channelList = make([]ChannelInfo, 0, 1000)
-	fmt.Println("make channelList")
 	err = db.Select(&channelList, "SELECT * FROM channel ORDER BY id")
 	if err != nil {
 		fmt.Println(err)
@@ -376,9 +402,12 @@ func postLogin(c echo.Context) error {
 }
 
 func getLogout(c echo.Context) error {
-	sess, _ := session.Get("session", c)
-	delete(sess.Values, "user_id")
-	sess.Save(c.Request(), c.Response())
+	r := c.Request()
+	w := c.Response().Writer
+	deleteSession(r, w)
+	// sess, _ := session.Get("session", c)
+	// delete(sess.Values, "user_id")
+	// sess.Save(c.Request(), c.Response())
 	return c.Redirect(http.StatusSeeOther, "/")
 }
 
@@ -407,37 +436,38 @@ func postMessage(c echo.Context) error {
 	return c.NoContent(204)
 }
 
+// メッセージ（複数形）をJSONにする
 func jsonifyMessage(m []Message) ([]map[string]interface{}, error) {
 	if len(m) == 0 {
 		return make([]map[string]interface{}, 0, 0), nil
 	}
 
+	// O(n)
 	messages := map[int64]Message{}
 	for i := range m {
 		messages[m[i].UserID] = m[i]
 	}
 
+	// メッセージの投稿者を抽出してその情報をmapにする
 	userIDs := make([]int64, 0, len(m))
 	for id := range messages {
 		userIDs = append(userIDs, id)
 	}
 	query, args, err := sqlx.In("SELECT id, name, display_name, avatar_icon FROM user WHERE id IN (?) ORDER BY id DESC", userIDs)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 	users := []User{}
 	err = db.Select(&users, query, args...)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
-
 	usersMap := map[int64]User{}
 	for i := range users {
 		usersMap[users[i].ID] = users[i]
 	}
 
+	// JSON生成
 	rs := make([]map[string]interface{}, 0, len(users))
 	for i := len(m) - 1; i >= 0; i-- {
 		r := make(map[string]interface{})
@@ -484,7 +514,6 @@ func getMessage(c echo.Context) error {
 		// 	return err
 		// }
 		_, err = db.Exec("UPDATE haveread_count SET num = ? WHERE user_id = ? AND channel_id = ?", len(messages), userID, chanID)
-		fmt.Println("getMessage", userID, chanID, len(messages))
 		if err != nil {
 			return err
 		}
@@ -493,21 +522,13 @@ func getMessage(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func queryChannels() ([]int, error) {
-	res := make([]int, 0, len(channelList))
-	for i := len(channelList) - 1; i >= 0; i-- {
-		res = append(res, channelList[i].ID)
-	}
-	return res, nil
-}
-
-type binID struct {
+type havereadInfo struct {
 	Channel int64 `db:"channel_id"`
 	Num     int   `db:"num"`
 }
 
-func queryHaveRead(userID int64) ([]binID, error) {
-	IDs := []binID{}
+func queryHaveRead(userID int64) ([]havereadInfo, error) {
+	IDs := []havereadInfo{}
 
 	err := db.Select(&IDs, "SELECT channel_id, num FROM haveread_count WHERE user_id = ?", userID)
 	if err == sql.ErrNoRows {
@@ -515,7 +536,6 @@ func queryHaveRead(userID int64) ([]binID, error) {
 	} else if err != nil {
 		return nil, err
 	}
-	fmt.Println("queryHaveRead", userID)
 	return IDs, nil
 }
 
@@ -526,6 +546,7 @@ func fetchUnread(c echo.Context) error {
 		return c.NoContent(http.StatusForbidden)
 	}
 
+	// TODO 非同期かなにかするかもしれない
 	time.Sleep(100 * time.Millisecond)
 
 	IDs, err := queryHaveRead(userID)
@@ -535,28 +556,17 @@ func fetchUnread(c echo.Context) error {
 	}
 
 	resp := []map[string]interface{}{}
-	var cnt int
 	for i := range IDs {
 		c := channelMap[int(IDs[i].Channel)]
-		cnt = c.MessageCount - IDs[i].Num
-		fmt.Println("fetchUnread", cnt, c.MessageCount, IDs[i].Num)
 		_, err = db.Exec("UPDATE haveread_count SET num = ? WHERE user_id = ? AND channel_id = ?", c.MessageCount, userID, IDs[i].Channel)
-		// if lastID > 0 {
-		// 	err = db.Get(&cnt,
-		// 		"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
-		// 		chID, lastID)
-		// } else {
-		// 	err = db.Get(&cnt,
-		// 		"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?",
-		// 		chID)
-		// }
 		if err != nil {
 			fmt.Println(err)
 			return err
 		}
 		r := map[string]interface{}{
 			"channel_id": IDs[i].Channel,
-			"unread":     cnt}
+			"unread":     c.MessageCount - IDs[i].Num
+		}
 		resp = append(resp, r)
 	}
 
@@ -586,8 +596,7 @@ func getHistory(c echo.Context) error {
 	}
 
 	const N = 20
-	var cnt int
-	cnt = channelMap[int(chID)].MessageCount
+	cnt := channelMap[int(chID)].MessageCount
 	//err = db.Get(&cnt, "SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?", chID)
 	// if err != nil {
 	// 	return err
