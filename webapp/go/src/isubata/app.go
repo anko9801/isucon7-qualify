@@ -219,7 +219,7 @@ func register(name, password string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	userID := len(userList)
+	userID := int64(len(userList))
 	// userID, err := res.LastInsertId()
 	// if err != nil {
 	// 	return 0, err
