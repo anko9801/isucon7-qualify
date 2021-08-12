@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"database/sql"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -33,6 +34,7 @@ var (
 	db            *sqlx.DB
 	ErrBadReqeust = echo.NewHTTPError(http.StatusBadRequest)
 	ErrNotFound   = echo.ErrNotFound
+	ErrDuplicate  = errors.New("duplicate")
 )
 
 type Renderer struct {
@@ -225,9 +227,10 @@ func register(name, password string) (int64, error) {
 	userID := int64(len(userList))
 	userList = append(userList, User{userID, name, salt, digest, name, "default.png", time.Now()})
 	userMap[userID] = &userList[len(userList)-1]
-	if userNameMap[userID] != nil {
-		return 0, Error("Duplicate")
+	if userNameMap[name] != nil {
+		return 0, ErrDuplicate
 	}
+	userNameMap[name] = &userList[len(userList)-1]
 	return userID, nil
 }
 
@@ -372,7 +375,7 @@ func postRegister(c echo.Context) error {
 	}
 	userID, err := register(name, pw)
 	if err != nil {
-		if err == Error("Duplicate") {
+		if err == ErrDuplicate {
 			return c.NoContent(http.StatusConflict)
 		}
 		if merr, ok := err.(*mysql.MySQLError); ok {
