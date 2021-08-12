@@ -401,11 +401,11 @@ func postLogin(c echo.Context) error {
 	// err := db.Get(&user, "SELECT id, salt, password FROM user WHERE name = ?", name)
 	fmt.Println("SELECT * FROM user WHERE name = %s", name)
 	user = userNameMap[name]
-	if err == sql.ErrNoRows {
-		return echo.ErrForbidden
-	} else if err != nil {
-		return err
-	}
+	// if err == sql.ErrNoRows {
+	// 	return echo.ErrForbidden
+	// } else if err != nil {
+	// 	return err
+	// }
 
 	digest := fmt.Sprintf("%x", sha1.Sum([]byte(user.Salt+pw)))
 	if digest != user.Password {
