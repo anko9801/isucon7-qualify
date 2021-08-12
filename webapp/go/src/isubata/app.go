@@ -97,14 +97,15 @@ type User struct {
 }
 
 func getUser(userID int64) (*User, error) {
-	u := User{}
-	if err := db.Get(&u, "SELECT * FROM user WHERE id = ?", userID); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &u, nil
+	return userMap[userID], nil
+	// u := User{}
+	// if err := db.Get(&u, "SELECT * FROM user WHERE id = ?", userID); err != nil {
+	// 	if err == sql.ErrNoRows {
+	// 		return nil, nil
+	// 	}
+	// 	return nil, err
+	// }
+	// return &u, nil
 }
 
 func addMessage(channelID, userID int64, content string) (int64, error) {
@@ -238,6 +239,8 @@ type ChannelInfo struct {
 var (
 	channelList []ChannelInfo
 	channelMap  map[int]*ChannelInfo
+	userList    []User
+	userMap     map[int64]*User
 )
 
 func getInitialize(c echo.Context) error {
@@ -274,7 +277,6 @@ func getInitialize(c echo.Context) error {
 		fmt.Println(err)
 		return ErrBadReqeust
 	}
-	fmt.Println("channelList kan")
 
 	channelMap = make(map[int]*ChannelInfo, 1000)
 	for i := len(channelList) - 1; i >= 0; i-- {
@@ -288,7 +290,19 @@ func getInitialize(c echo.Context) error {
 		channelList[i].MessageCount = cnt
 		channelMap[channelList[i].ID] = &channelList[i]
 	}
-	fmt.Println("channelMap kan")
+
+	userList = make([]User, 0, 5000)
+	err = db.Select(&userList, "SELECT * FROM user ORDER BY id")
+	if err != nil {
+		fmt.Println(err)
+		return ErrBadReqeust
+	}
+
+	userMap = make(map[int64]*User, 5000)
+	for i := 0; i < len(userList); i++ {
+		userMap[userList[i].ID] = &userList[i]
+	}
+
 	return c.String(204, "")
 }
 
