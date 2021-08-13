@@ -526,7 +526,8 @@ func getMessage(c echo.Context) error {
 	}
 
 	if len(messages) > 0 {
-		_, err = db.Exec("INSERT haveread_count (user_id, channel_id, num) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE num = ?", userID, chanID, len(messages), len(messages))
+		// _, err = db.Exec("INSERT haveread_count (user_id, channel_id, num) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE num = ?", userID, chanID, len(messages), len(messages))
+		_, err = db.Exec("UPDATE haveread_count SET num = ? WHERE user_id = ? AND channel_id = ?", len(messages), userID, chanID)
 		if err != nil {
 			return err
 		}
