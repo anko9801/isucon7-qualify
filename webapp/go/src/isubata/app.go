@@ -213,21 +213,17 @@ func register(name, password string) (int64, error) {
 	salt := randomString(20)
 	digest := fmt.Sprintf("%x", sha1.Sum([]byte(salt+password)))
 
-	// _, err := db.Exec(
-	// 	"INSERT INTO user (name, salt, password, display_name, avatar_icon, created_at)"+
-	// 		" VALUES (?, ?, ?, ?, ?, NOW())",
-	// 	name, salt, digest, name, "default.png")
-	// if err != nil {
-	// 	return 0, err
-	// }
-	// userID, err := res.LastInsertId()
-	// if err != nil {
-	// 	return 0, err
-	// }
-	if userNameMap[name] != nil {
-		return 0, ErrDuplicate
+	res, err := db.Exec(
+		"INSERT INTO user (name, salt, password, display_name, avatar_icon, created_at)"+
+			" VALUES (?, ?, ?, ?, ?, NOW())",
+		name, salt, digest, name, "default.png")
+	if err != nil {
+		return 0, err
 	}
-	userID := int64(len(userList))
+	userID, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
 	userList = append(userList, User{userID, name, salt, digest, name, "default.png", time.Now()})
 	userMap[userID] = &userList[len(userList)-1]
 	userNameMap[name] = &userList[len(userList)-1]
