@@ -560,7 +560,7 @@ func fetchUnread(c echo.Context) error {
 	}
 
 	// TODO 非同期かなにかするかもしれない
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	IDs, err := queryHaveRead(userID)
 	if err != nil {
