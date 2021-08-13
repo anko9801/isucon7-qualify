@@ -570,7 +570,7 @@ func fetchUnread(c echo.Context) error {
 		fmt.Println(err)
 		return err
 	}
-	fmt.Println("query Have read kan")
+	fmt.Println("query Have read kan", IDs)
 
 	resp := []map[string]interface{}{}
 	for i := range IDs {
