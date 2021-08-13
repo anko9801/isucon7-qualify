@@ -221,6 +221,7 @@ func register(name, password string) (int64, error) {
 		return 0, err
 	}
 	userID, err := res.LastInsertId()
+	fmt.Println(userID)
 	if err != nil {
 		return 0, err
 	}
