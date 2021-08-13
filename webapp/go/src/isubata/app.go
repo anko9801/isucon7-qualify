@@ -574,7 +574,9 @@ func fetchUnread(c echo.Context) error {
 
 	resp := []map[string]interface{}{}
 	for i := range IDs {
+		fmt.Println(IDs[i].Channel)
 		c := channelMap[int(IDs[i].Channel)]
+		fmt.Println(c)
 		_, err = db.Exec("UPDATE haveread_count SET num = ? WHERE user_id = ? AND channel_id = ?", c.MessageCount, userID, IDs[i].Channel)
 		if err != nil {
 			fmt.Println(err)
