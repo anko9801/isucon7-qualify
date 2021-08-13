@@ -554,19 +554,23 @@ func queryHaveRead(userID int64) ([]havereadInfo, error) {
 
 // あるユーザーについて全てのチャンネルで未読のカウントを返す
 func fetchUnread(c echo.Context) error {
+	fmt.Println("fetch")
 	userID := sessUserID(c)
 	if userID == 0 {
 		return c.NoContent(http.StatusForbidden)
 	}
 
+	fmt.Println("userID kan")
 	// TODO 非同期かなにかするかもしれない
 	time.Sleep(500 * time.Millisecond)
 
+	fmt.Println("sleep kan")
 	IDs, err := queryHaveRead(userID)
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
+	fmt.Println("query Have read kan")
 
 	resp := []map[string]interface{}{}
 	for i := range IDs {
@@ -576,6 +580,7 @@ func fetchUnread(c echo.Context) error {
 			fmt.Println(err)
 			return err
 		}
+		fmt.Println("loop", userID)
 		r := map[string]interface{}{
 			"channel_id": IDs[i].Channel,
 			"unread":     c.MessageCount - IDs[i].Num}
